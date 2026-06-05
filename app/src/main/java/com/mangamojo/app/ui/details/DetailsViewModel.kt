@@ -7,11 +7,13 @@ import com.mangamojo.app.core.UiState
 import com.mangamojo.app.core.toAppError
 import com.mangamojo.app.domain.model.Chapter
 import com.mangamojo.app.domain.model.MangaDetails
+import com.mangamojo.app.domain.model.ReadingProgress
 import com.mangamojo.app.domain.usecase.GetChaptersUseCase
 import com.mangamojo.app.domain.usecase.GetMangaDetailsUseCase
 import com.mangamojo.app.domain.usecase.ObserveIsFavoriteUseCase
-import com.mangamojo.app.domain.usecase.ObserveReadChapterIdsUseCase
+import com.mangamojo.app.domain.usecase.ObserveMangaProgressUseCase
 import com.mangamojo.app.domain.usecase.ObserveSettingsUseCase
+import com.mangamojo.app.domain.usecase.SetChapterReadStateUseCase
 import com.mangamojo.app.domain.usecase.ToggleFavoriteUseCase
 import com.mangamojo.app.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +30,7 @@ data class DetailsUiState(
     val details: UiState<MangaDetails> = UiState.Loading,
     val chapters: UiState<List<Chapter>> = UiState.Loading,
     val isFavorite: Boolean = false,
-    val readChapterIds: Set<String> = emptySet(),
+    val chapterProgress: Map<String, ReadingProgress> = emptyMap(),
 )
 
 @HiltViewModel
@@ -37,8 +39,9 @@ class DetailsViewModel @Inject constructor(
     private val getMangaDetails: GetMangaDetailsUseCase,
     private val getChapters: GetChaptersUseCase,
     private val toggleFavorite: ToggleFavoriteUseCase,
+    private val setChapterReadState: SetChapterReadStateUseCase,
     observeIsFavorite: ObserveIsFavoriteUseCase,
-    observeReadChapterIds: ObserveReadChapterIdsUseCase,
+    observeMangaProgress: ObserveMangaProgressUseCase,
     observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
@@ -55,13 +58,13 @@ class DetailsViewModel @Inject constructor(
         details,
         chapters,
         observeIsFavorite(mangaId),
-        observeReadChapterIds(mangaId),
-    ) { details, chapters, isFavorite, readIds ->
+        observeMangaProgress(mangaId),
+    ) { details, chapters, isFavorite, progress ->
         DetailsUiState(
             details = details,
             chapters = chapters,
             isFavorite = isFavorite,
-            readChapterIds = readIds,
+            chapterProgress = progress.associateBy { it.chapterId },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailsUiState())
 
@@ -95,5 +98,10 @@ class DetailsViewModel @Inject constructor(
     fun onToggleFavorite() {
         val current = (details.value as? UiState.Success)?.data ?: return
         viewModelScope.launch { toggleFavorite(current) }
+    }
+
+    fun onSetChapterReadState(chapter: Chapter, read: Boolean) {
+        val current = (details.value as? UiState.Success)?.data ?: return
+        viewModelScope.launch { setChapterReadState(current, chapter, read) }
     }
 }

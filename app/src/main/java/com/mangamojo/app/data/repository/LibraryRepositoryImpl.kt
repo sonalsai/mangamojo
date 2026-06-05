@@ -97,7 +97,7 @@ class LibraryRepositoryImpl @Inject constructor(
                 coverUrl = manga.coverUrl,
                 chapterId = chapter.id,
                 chapterLabel = chapter.label,
-                page = page,
+                page = furthest,
                 total = total,
                 readAt = now,
             )
@@ -105,11 +105,24 @@ class LibraryRepositoryImpl @Inject constructor(
         historyDao.trimToLimit(CachePolicy.HISTORY_LIMIT)
     }
 
+    override suspend fun setChapterReadState(manga: MangaDetails, chapter: Chapter, read: Boolean) {
+        if (read) {
+            val total = chapter.pages.takeIf { it > 0 } ?: 1
+            saveProgress(manga, chapter, page = total - 1, total = total)
+        } else {
+            progressDao.deleteByChapter(chapter.id)
+            historyDao.deleteChapter(manga.id, chapter.id)
+        }
+    }
+
     override suspend fun getChapterProgress(chapterId: String): ReadingProgress? =
         progressDao.getByChapter(chapterId)?.toDomain()
 
     override fun observeChapterProgress(chapterId: String): Flow<ReadingProgress?> =
         progressDao.observeByChapter(chapterId).map { it?.toDomain() }
+
+    override fun observeMangaProgress(mangaId: String): Flow<List<ReadingProgress>> =
+        progressDao.observeByManga(mangaId).map { list -> list.map { it.toDomain() } }
 
     override fun observeReadChapterIds(mangaId: String): Flow<Set<String>> =
         progressDao.observeReadChapterIds(mangaId).map { it.toSet() }

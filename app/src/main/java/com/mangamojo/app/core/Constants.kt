@@ -16,6 +16,8 @@ object MangaDex {
 
     /** Conservative default for a general audience; widened from Settings. */
     val DEFAULT_CONTENT_RATINGS = listOf("safe", "suggestive")
+    val ADULT_CONTENT_RATINGS = listOf("erotica", "pornographic")
+    val MIXED_CONTENT_RATINGS = DEFAULT_CONTENT_RATINGS + ADULT_CONTENT_RATINGS
     val ALL_CONTENT_RATINGS = listOf("safe", "suggestive", "erotica", "pornographic")
 
     /** includes[] used on manga requests to inline cover/author/artist. */

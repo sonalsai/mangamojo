@@ -1,25 +1,36 @@
 package com.mangamojo.app.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -53,6 +64,7 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = showDrawer,
+        scrimColor = MaterialTheme.colorScheme.background.copy(alpha = 0.58f),
         drawerContent = {
             MangaMojoDrawer(
                 currentRoute = currentRoute,
@@ -142,44 +154,147 @@ private fun MangaMojoDrawer(
     onDestinationClick: (String) -> Unit,
 ) {
     ModalDrawerSheet(
-        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        modifier = Modifier
+            .fillMaxHeight()
+            .widthIn(max = 320.dp),
+        drawerContainerColor = MaterialTheme.colorScheme.background,
         drawerContentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 20.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 18.dp, vertical = 24.dp),
+        ) {
+            DrawerHeader()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f))
+            Spacer(Modifier.height(18.dp))
+
+            DrawerSectionLabel("Browse")
+            Spacer(Modifier.height(8.dp))
+            TopLevelDestination.entries
+                .filterNot { it == TopLevelDestination.SETTINGS }
+                .forEach { destination ->
+                    DrawerNavItem(
+                        destination = destination,
+                        selected = currentRoute == destination.route,
+                        onClick = { onDestinationClick(destination.route) },
+                    )
+                }
+
+            Spacer(Modifier.weight(1f))
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+            Spacer(Modifier.height(10.dp))
+            DrawerSectionLabel("Manage")
+            Spacer(Modifier.height(8.dp))
+            DrawerNavItem(
+                destination = TopLevelDestination.SETTINGS,
+                selected = currentRoute == TopLevelDestination.SETTINGS.route,
+                onClick = { onDestinationClick(TopLevelDestination.SETTINGS.route) },
+            )
             Text(
-                text = "MANGAMOJO",
-                style = MaterialTheme.typography.headlineSmall,
+                text = "MangaDex source",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DrawerHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 6.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "M",
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            Text(
-                text = "Shonen Crimson",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-            Spacer(Modifier.height(18.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f))
-            Spacer(Modifier.height(8.dp))
-
-            TopLevelDestination.entries.forEach { destination ->
-                NavigationDrawerItem(
-                    selected = currentRoute == destination.route,
-                    onClick = { onDestinationClick(destination.route) },
-                    icon = { Icon(destination.icon, contentDescription = null) },
-                    label = { Text(destination.label, fontWeight = FontWeight.Bold) },
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    modifier = Modifier.padding(vertical = 2.dp),
-                )
-            }
         }
+        Spacer(Modifier.size(12.dp))
+        Text(
+            text = "MANGAMOJO",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun DrawerSectionLabel(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(horizontal = 12.dp),
+    )
+}
+
+@Composable
+private fun DrawerNavItem(
+    destination: TopLevelDestination,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val iconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                else Color.Transparent,
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (selected) {
+            Spacer(
+                modifier = Modifier
+                    .height(24.dp)
+                    .size(width = 3.dp, height = 24.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Spacer(Modifier.size(12.dp))
+        } else {
+            Spacer(Modifier.size(15.dp))
+        }
+        Icon(
+            destination.icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(22.dp),
+        )
+        Spacer(Modifier.size(16.dp))
+        Text(
+            text = destination.label,
+            style = MaterialTheme.typography.titleSmall,
+            color = contentColor,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

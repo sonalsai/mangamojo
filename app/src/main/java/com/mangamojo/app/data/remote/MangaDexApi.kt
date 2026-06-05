@@ -29,6 +29,7 @@ interface MangaDexApi {
         @Query("hasAvailableChapters") hasAvailableChapters: String?,
         @Query("includedTags[]") includedTags: List<String>?,
         @Query("includedTagsMode") includedTagsMode: String?,
+        @Query("updatedAtSince") updatedAtSince: String?,
         @QueryMap order: Map<String, String>,
     ): MangaListResponseDto
 

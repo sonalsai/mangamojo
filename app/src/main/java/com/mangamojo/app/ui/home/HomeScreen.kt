@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,14 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -33,7 +30,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mangamojo.app.domain.model.AdultContentMode
 import com.mangamojo.app.domain.model.Favorite
 import com.mangamojo.app.domain.model.HistoryEntry
 import com.mangamojo.app.domain.model.Manga
@@ -61,6 +58,7 @@ import com.mangamojo.app.ui.components.LoadingState
 import com.mangamojo.app.ui.components.ProgressOverlayCard
 import com.mangamojo.app.ui.components.RailCard
 import com.mangamojo.app.ui.components.SectionHeader
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,15 +122,18 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                val hero = discover.items.firstOrNull()
-                if (hero != null) {
-                    HeroSection(manga = hero, onReadNow = { onMangaClick(hero.id) })
-                } else {
-                    Box(Modifier.fillMaxWidth().height(300.dp)) {
-                        if (discover.loading) LoadingState()
-                    }
+            if (state.adultContentMode != AdultContentMode.OFF) {
+                item {
+                    AdultModeIndicator(mode = state.adultContentMode)
                 }
+            }
+
+            item {
+                WeeklyPopularSection(
+                    weeklyPopular = state.weeklyPopular,
+                    onRetry = viewModel::retryWeeklyPopular,
+                    onMangaClick = onMangaClick,
+                )
             }
 
             if (state.history.isNotEmpty()) {
@@ -212,81 +213,91 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeroSection(
-    manga: Manga,
-    onReadNow: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(420.dp),
+private fun AdultModeIndicator(mode: AdultContentMode) {
+    val message = when (mode) {
+        AdultContentMode.MIXED -> "Adult mode on - mixed results"
+        AdultContentMode.ADULT_ONLY -> "Adult only mode"
+        AdultContentMode.OFF -> return
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+        contentColor = MaterialTheme.colorScheme.primary,
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        CoverImage(
-            url = manga.coverUrl,
-            contentDescription = manga.title,
-            cornerRadius = 0,
-            modifier = Modifier.fillMaxSize(),
+        Text(
+            text = message,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
         )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to MaterialTheme.colorScheme.background.copy(alpha = 0.06f),
-                        0.52f to MaterialTheme.colorScheme.background.copy(alpha = 0.36f),
-                        1f to MaterialTheme.colorScheme.background,
-                    )
-                ),
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = manga.title,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HeroChip(manga.status.label)
-                HeroChip(manga.contentRating.prettyLabel())
-            }
-            Text(
-                text = "A featured MangaMojo pick with striking art, fast chapters, and a story ready for your next binge.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(0.92f),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onReadNow,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text("Read Now")
+    }
+}
+
+@Composable
+private fun WeeklyPopularSection(
+    weeklyPopular: WeeklyPopularState,
+    onRetry: () -> Unit,
+    onMangaClick: (String) -> Unit,
+) {
+    SectionHeader(title = "Popular This Week")
+    val items = weeklyPopular.items.take(5)
+    when {
+        weeklyPopular.loading && weeklyPopular.items.isEmpty() -> Box(Modifier.fillMaxWidth().height(260.dp)) {
+            LoadingState()
+        }
+
+        weeklyPopular.error != null && weeklyPopular.items.isEmpty() -> Box(Modifier.fillMaxWidth().height(260.dp)) {
+            ErrorState(weeklyPopular.error.userMessage, onRetry = onRetry)
+        }
+
+        weeklyPopular.items.isEmpty() -> Box(Modifier.fillMaxWidth().height(180.dp)) {
+            EmptyState("Nothing popular yet", "No weekly popular titles are available right now.")
+        }
+
+        else -> {
+            val pagerState = rememberPagerState(pageCount = { items.size })
+            LaunchedEffect(items, pagerState) {
+                if (items.size > 1) {
+                    while (true) {
+                        delay(3_500)
+                        pagerState.animateScrollToPage((pagerState.currentPage + 1) % items.size)
+                    }
                 }
-                OutlinedButton(
-                    onClick = onReadNow,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 12.dp,
+                    modifier = Modifier.fillMaxWidth().height(300.dp),
+                ) { page ->
+                    val manga = items[page]
+                    WeeklyPopularSlide(
+                        rank = page + 1,
+                        manga = manga,
+                        onClick = { onMangaClick(manga.id) },
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text("My List")
+                    items.forEachIndexed { index, _ ->
+                        val selected = pagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .size(width = if (selected) 18.dp else 7.dp, height = 7.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -294,17 +305,86 @@ private fun HeroSection(
 }
 
 @Composable
-private fun HeroChip(label: String) {
-    Text(
-        text = label.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
+private fun WeeklyPopularSlide(
+    rank: Int,
+    manga: Manga,
+    onClick: () -> Unit,
+) {
+    Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-    )
+            .fillMaxSize()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+    ) {
+        CoverImage(
+            url = manga.coverUrl,
+            contentDescription = manga.title,
+            cornerRadius = 12,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                        0.42f to MaterialTheme.colorScheme.background.copy(alpha = 0.18f),
+                        1f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+                    )
+                ),
+        )
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = RoundedCornerShape(7.dp),
+            shadowElevation = 2.dp,
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+        ) {
+            Text(
+                text = "#$rank",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = manga.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                WeeklyMetadataChip(manga.status.label)
+                WeeklyMetadataChip(manga.contentRating.prettyLabel())
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyMetadataChip(label: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(50),
+    ) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
 }
 
 @Composable

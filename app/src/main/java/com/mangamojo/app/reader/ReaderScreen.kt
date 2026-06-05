@@ -150,12 +150,15 @@ fun ReaderScreen(
     }
     LaunchedEffect(state.chapterId, state.pages) {
         if (state.pages.isEmpty()) return@LaunchedEffect
-        snapshotFlow { listState.firstVisibleItemIndex }
+        snapshotFlow { listState.furthestVisiblePageIndex() }
             .debounce(400)
             .distinctUntilChanged()
             .collect { viewModel.onPageChanged(it) }
     }
 }
+
+private fun LazyListState.furthestVisiblePageIndex(): Int =
+    layoutInfo.visibleItemsInfo.maxOfOrNull { it.index } ?: firstVisibleItemIndex
 
 @Composable
 private fun PageList(pages: List<Page>, listState: LazyListState) {

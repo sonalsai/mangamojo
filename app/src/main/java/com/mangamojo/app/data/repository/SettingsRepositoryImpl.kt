@@ -39,7 +39,7 @@ class SettingsRepositoryImpl @Inject constructor(
         .map { prefs ->
             AppSettings(
                 themeMode = prefs[Keys.THEME].toEnum(ThemeMode.DARK),
-                themePalette = prefs[Keys.THEME_PALETTE].toEnum(ThemePalette.SHONEN_CRIMSON),
+                themePalette = prefs[Keys.THEME_PALETTE].toThemePalette(),
                 readingDirection = prefs[Keys.DIRECTION].toEnum(ReadingDirection.VERTICAL),
                 dataSaver = prefs[Keys.DATA_SAVER] ?: false,
                 contentRatings = prefs[Keys.CONTENT_RATINGS] ?: MangaDex.DEFAULT_CONTENT_RATINGS.toSet(),
@@ -74,3 +74,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
 private inline fun <reified T : Enum<T>> String?.toEnum(default: T): T =
     this?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
+
+private fun String?.toThemePalette(): ThemePalette {
+    val palette = this?.let { runCatching { enumValueOf<ThemePalette>(it) }.getOrNull() }
+    return when (palette) {
+        null, ThemePalette.SHONEN_CRIMSON -> ThemePalette.Default
+        else -> palette
+    }
+}

@@ -40,12 +40,12 @@ val RetroShonenPalette = MangaMojoPalette(
 )
 
 val MysticalDarkSagePalette = MangaMojoPalette(
-    accent = Color(0xFF10B981),
+    accent = Color(0xFF00C896),
     background = Color(0xFF111612),
     surface = Color(0xFF1C241E),
     primaryText = Color(0xFFF3F4F6),
     secondaryText = Color(0xFF9CA3AF),
-    onAccent = Color(0xFF111612),
+    onAccent = Color(0xFF07130F),
 )
 
 fun ThemePalette.toMangaMojoPalette(): MangaMojoPalette = when (this) {

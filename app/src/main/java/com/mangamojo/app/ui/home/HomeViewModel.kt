@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mangamojo.app.core.AppError
 import com.mangamojo.app.core.MangaDex
 import com.mangamojo.app.core.toAppError
+import com.mangamojo.app.domain.model.AdultContentMode
 import com.mangamojo.app.domain.model.AppSettings
 import com.mangamojo.app.domain.model.Favorite
 import com.mangamojo.app.domain.model.HistoryEntry
@@ -21,9 +22,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 /** Discovery feed tabs on the Home screen. */
@@ -42,10 +49,18 @@ data class DiscoverState(
     val hasMore: Boolean = false,
 )
 
+data class WeeklyPopularState(
+    val items: List<Manga> = emptyList(),
+    val loading: Boolean = true,
+    val error: AppError? = null,
+)
+
 data class HomeUiState(
     val favorites: List<Favorite> = emptyList(),
     val history: List<HistoryEntry> = emptyList(),
+    val weeklyPopular: WeeklyPopularState = WeeklyPopularState(),
     val discover: DiscoverState = DiscoverState(),
+    val adultContentMode: AdultContentMode = AdultContentMode.OFF,
 )
 
 @HiltViewModel
@@ -60,20 +75,38 @@ class HomeViewModel @Inject constructor(
         observeSettings().stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     private val discover = MutableStateFlow(DiscoverState())
+    private val weeklyPopular = MutableStateFlow(WeeklyPopularState())
 
     val uiState: StateFlow<HomeUiState> = combine(
         observeFavorites(),
         observeHistory(),
+        weeklyPopular,
         discover,
-    ) { favorites, history, discoverState ->
-        HomeUiState(favorites, history, discoverState)
+        settings,
+    ) { favorites, history, weeklyPopularState, discoverState, settings ->
+        HomeUiState(
+            favorites = favorites,
+            history = history,
+            weeklyPopular = weeklyPopularState,
+            discover = discoverState,
+            adultContentMode = settings.adultContentMode,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     private var offset = 0
     private var loadJob: Job? = null
+    private var weeklyPopularJob: Job? = null
 
     init {
-        loadDiscover(reset = true)
+        viewModelScope.launch {
+            settings
+                .map { it.contentRatings }
+                .distinctUntilChanged()
+                .collect {
+                    loadWeeklyPopular()
+                    loadDiscover(reset = true)
+                }
+        }
     }
 
     fun selectTab(tab: DiscoverTab) {
@@ -84,10 +117,41 @@ class HomeViewModel @Inject constructor(
 
     fun retry() = loadDiscover(reset = true)
 
+    fun retryWeeklyPopular() = loadWeeklyPopular()
+
     fun loadMore() {
         val current = discover.value
         if (current.loading || current.loadingMore || !current.hasMore) return
         loadDiscover(reset = false)
+    }
+
+    private fun loadWeeklyPopular() {
+        weeklyPopularJob?.cancel()
+        weeklyPopularJob = viewModelScope.launch {
+            weeklyPopular.update { it.copy(loading = true, error = null) }
+            try {
+                val ratings = settings.value.contentRatings.toList()
+                    .ifEmpty { MangaDex.DEFAULT_CONTENT_RATINGS }
+                val result = searchManga(
+                    SearchQuery(
+                        title = null,
+                        limit = WEEKLY_POPULAR_LIMIT,
+                        sort = SearchSort.POPULAR,
+                        contentRatings = ratings,
+                        updatedAtSince = weeklyCutoffIso(),
+                    )
+                )
+                weeklyPopular.update {
+                    it.copy(
+                        items = result.items.take(WEEKLY_POPULAR_LIMIT),
+                        loading = false,
+                        error = null,
+                    )
+                }
+            } catch (e: Exception) {
+                weeklyPopular.update { it.copy(loading = false, error = e.toAppError()) }
+            }
+        }
     }
 
     private fun loadDiscover(reset: Boolean) {
@@ -126,5 +190,17 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun weeklyCutoffIso(): String =
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+            Instant.now()
+                .minus(7, ChronoUnit.DAYS)
+                .truncatedTo(ChronoUnit.SECONDS)
+                .atOffset(ZoneOffset.UTC),
+        )
+
+    private companion object {
+        const val WEEKLY_POPULAR_LIMIT = 5
     }
 }

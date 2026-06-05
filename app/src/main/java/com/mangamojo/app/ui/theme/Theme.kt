@@ -39,13 +39,13 @@ private fun MangaMojoPalette.lightColors() = lightColorScheme(
 
 /**
  * App theme driven by the user's [ThemeMode] and [ThemePalette] preferences.
- * The default palette is Shonen Crimson rather than dynamic color so the
+ * The default palette is MangaMojo green rather than dynamic color so the
  * reader keeps a consistent MangaMojo identity across devices.
  */
 @Composable
 fun MangaMojoTheme(
     themeMode: ThemeMode = ThemeMode.DARK,
-    themePalette: ThemePalette = ThemePalette.SHONEN_CRIMSON,
+    themePalette: ThemePalette = ThemePalette.Default,
     content: @Composable () -> Unit,
 ) {
     val dark = when (themeMode) {

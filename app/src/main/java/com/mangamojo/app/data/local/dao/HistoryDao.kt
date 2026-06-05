@@ -25,6 +25,9 @@ interface HistoryDao {
     @Query("DELETE FROM history WHERE mangaId = :mangaId")
     suspend fun delete(mangaId: String)
 
+    @Query("DELETE FROM history WHERE mangaId = :mangaId AND chapterId = :chapterId")
+    suspend fun deleteChapter(mangaId: String, chapterId: String)
+
     @Query("DELETE FROM history")
     suspend fun clear()
 

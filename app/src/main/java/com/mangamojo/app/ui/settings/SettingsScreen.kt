@@ -18,8 +18,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +32,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,7 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mangamojo.app.core.MangaDex
+import com.mangamojo.app.domain.model.AdultContentMode
 import com.mangamojo.app.domain.model.ReadingDirection
 import com.mangamojo.app.domain.model.ThemeMode
 import com.mangamojo.app.domain.model.ThemePalette
@@ -60,6 +65,8 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val cachedCount by viewModel.cachedCount.collectAsStateWithLifecycle()
     var dialog by remember { mutableStateOf<ConfirmTarget?>(null) }
+    var showAdultConsent by remember { mutableStateOf(false) }
+    val adultMode = settings.adultContentMode
 
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
@@ -91,16 +98,18 @@ fun SettingsScreen(
                             selected = settings.themeMode == mode,
                             onClick = { viewModel.onThemeModeChange(mode) },
                             shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                            colors = mangaMojoSegmentedButtonColors(),
                         ) { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) }
                     }
                 }
             }
-            SettingRow(title = "Color theme", subtitle = "Default is Shonen Crimson.") {
+            SettingRow(title = "Color theme", subtitle = "Default is MangaMojo Green.") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ThemePalette.entries.forEach { palette ->
+                    selectableThemePalettes.forEach { palette ->
                         FilterChip(
                             selected = settings.themePalette == palette,
                             onClick = { viewModel.onThemePaletteChange(palette) },
+                            colors = mangaMojoFilterChipColors(),
                             leadingIcon = {
                                 Box(
                                     modifier = Modifier
@@ -119,14 +128,16 @@ fun SettingsScreen(
             SettingsSection("Reader")
             SettingRow(
                 title = "Reading direction",
-                subtitle = "Vertical (webtoon) is used in this version; other modes are coming soon.",
+                subtitle = "Vertical reader is currently supported. Other styles are coming later.",
             ) {
                 SingleChoiceSegmentedButtonRow {
                     ReadingDirection.entries.forEachIndexed { index, dir ->
                         SegmentedButton(
-                            selected = settings.readingDirection == dir,
-                            onClick = { viewModel.onReadingDirectionChange(dir) },
+                            selected = dir == ReadingDirection.VERTICAL,
+                            enabled = false,
+                            onClick = {},
                             shape = SegmentedButtonDefaults.itemShape(index, ReadingDirection.entries.size),
+                            colors = mangaMojoSegmentedButtonColors(),
                         ) { Text(dir.name.lowercase().replaceFirstChar { it.uppercase() }) }
                     }
                 }
@@ -140,17 +151,29 @@ fun SettingsScreen(
 
             HorizontalDivider()
             SettingsSection("Content")
-            SettingRow(
-                title = "Content ratings",
-                subtitle = "Which ratings to include in search and browse.",
-            ) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MangaDex.ALL_CONTENT_RATINGS.forEach { rating ->
-                        FilterChip(
-                            selected = rating in settings.contentRatings,
-                            onClick = { viewModel.onToggleContentRating(rating) },
-                            label = { Text(rating.replaceFirstChar { it.uppercase() }) },
-                        )
+            ToggleRow(
+                title = "Adult content",
+                subtitle = adultMode.description,
+                checked = adultMode != AdultContentMode.OFF,
+                onCheckedChange = { enabled ->
+                    if (enabled) showAdultConsent = true
+                    else viewModel.onAdultContentModeChange(AdultContentMode.OFF)
+                },
+            )
+            if (adultMode != AdultContentMode.OFF) {
+                SettingRow(
+                    title = "Adult mode",
+                    subtitle = "Choose whether adult titles appear with general titles or alone.",
+                ) {
+                    SingleChoiceSegmentedButtonRow {
+                        adultContentModes.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = adultMode == mode,
+                                onClick = { viewModel.onAdultContentModeChange(mode) },
+                                shape = SegmentedButtonDefaults.itemShape(index, adultContentModes.size),
+                                colors = mangaMojoSegmentedButtonColors(),
+                            ) { Text(mode.label) }
+                        }
                     }
                 }
             }
@@ -198,7 +221,32 @@ fun SettingsScreen(
             onDismiss = { dialog = null },
         )
     }
+
+    if (showAdultConsent) {
+        AdultContentConsentDialog(
+            onMixed = {
+                viewModel.onAdultContentModeChange(AdultContentMode.MIXED)
+                showAdultConsent = false
+            },
+            onAdultOnly = {
+                viewModel.onAdultContentModeChange(AdultContentMode.ADULT_ONLY)
+                showAdultConsent = false
+            },
+            onDismiss = { showAdultConsent = false },
+        )
+    }
 }
+
+private val selectableThemePalettes = listOf(
+    ThemePalette.MYSTICAL_DARK_SAGE,
+    ThemePalette.NEON_CYBERPUNK,
+    ThemePalette.RETRO_SHONEN,
+)
+
+private val adultContentModes = listOf(
+    AdultContentMode.MIXED,
+    AdultContentMode.ADULT_ONLY,
+)
 
 private enum class ConfirmTarget(val title: String, val message: String) {
     CACHE("Clear cache?", "Cached metadata will be removed. Favorites and history are kept."),
@@ -206,12 +254,26 @@ private enum class ConfirmTarget(val title: String, val message: String) {
     FAVORITES("Clear favorites?", "All titles will be removed from your library."),
 }
 
+private val AdultContentMode.label: String
+    get() = when (this) {
+        AdultContentMode.OFF -> "Off"
+        AdultContentMode.MIXED -> "Mixed"
+        AdultContentMode.ADULT_ONLY -> "Adult only"
+    }
+
+private val AdultContentMode.description: String
+    get() = when (this) {
+        AdultContentMode.OFF -> "Adult titles are hidden from search and browse."
+        AdultContentMode.MIXED -> "Adult titles can appear with general titles."
+        AdultContentMode.ADULT_ONLY -> "Only adult-rated titles appear in search and browse."
+    }
+
 private val ThemePalette.label: String
     get() = when (this) {
         ThemePalette.SHONEN_CRIMSON -> "Shonen"
         ThemePalette.NEON_CYBERPUNK -> "Cyberpunk"
         ThemePalette.RETRO_SHONEN -> "Retro"
-        ThemePalette.MYSTICAL_DARK_SAGE -> "Sage"
+        ThemePalette.MYSTICAL_DARK_SAGE -> "MangaMojo"
     }
 
 private val ThemePalette.swatchColor: Color
@@ -219,8 +281,31 @@ private val ThemePalette.swatchColor: Color
         ThemePalette.SHONEN_CRIMSON -> Color(0xFFE50914)
         ThemePalette.NEON_CYBERPUNK -> Color(0xFFA855F7)
         ThemePalette.RETRO_SHONEN -> Color(0xFFFF6B00)
-        ThemePalette.MYSTICAL_DARK_SAGE -> Color(0xFF10B981)
+        ThemePalette.MYSTICAL_DARK_SAGE -> Color(0xFF00C896)
     }
+
+@Composable
+private fun mangaMojoSegmentedButtonColors() = SegmentedButtonDefaults.colors(
+    activeContainerColor = MaterialTheme.colorScheme.primary,
+    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+    activeBorderColor = MaterialTheme.colorScheme.primary,
+    inactiveContainerColor = MaterialTheme.colorScheme.surface,
+    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+    inactiveBorderColor = MaterialTheme.colorScheme.outline,
+    disabledActiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+    disabledActiveContentColor = MaterialTheme.colorScheme.primary,
+    disabledActiveBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.48f),
+    disabledInactiveContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.58f),
+    disabledInactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+    disabledInactiveBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.42f),
+)
+
+@Composable
+private fun mangaMojoFilterChipColors() = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = MaterialTheme.colorScheme.primary,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+)
 
 @Composable
 private fun SettingsSection(title: String) {
@@ -259,7 +344,15 @@ private fun ToggleRow(
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                checkedBorderColor = MaterialTheme.colorScheme.primary,
+            ),
+        )
     }
 }
 
@@ -276,6 +369,46 @@ private fun ClickableRow(title: String, subtitle: String, onClick: () -> Unit) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick = onClick) { Text("Clear") }
+        TextButton(onClick = onClick) {
+            Text(
+                text = "Clear",
+                color = if (title == "Clear cache") MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.error,
+            )
+        }
     }
+}
+
+@Composable
+private fun AdultContentConsentDialog(
+    onMixed: () -> Unit,
+    onAdultOnly: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enable adult content?") },
+        text = {
+            Text(
+                "Adult content may include explicit sexual material. Confirm that you want to include it in MangaMojo results.",
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onMixed,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text("Mixed mode")
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onAdultOnly) { Text("Adult only") }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        },
+    )
 }

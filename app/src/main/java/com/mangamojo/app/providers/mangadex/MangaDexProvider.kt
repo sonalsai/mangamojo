@@ -48,6 +48,7 @@ class MangaDexProvider @Inject constructor(
             hasAvailableChapters = "true",
             includedTags = query.includedTagIds.ifEmpty { null },
             includedTagsMode = if (query.includedTagIds.isEmpty()) null else "AND",
+            updatedAtSince = query.updatedAtSince,
             order = sort.orderParams,
         )
         return SearchResult(

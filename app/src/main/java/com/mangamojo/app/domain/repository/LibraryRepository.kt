@@ -27,8 +27,10 @@ interface LibraryRepository {
 
     /* ----- Reading progress ----- */
     suspend fun saveProgress(manga: MangaDetails, chapter: Chapter, page: Int, total: Int)
+    suspend fun setChapterReadState(manga: MangaDetails, chapter: Chapter, read: Boolean)
     suspend fun getChapterProgress(chapterId: String): ReadingProgress?
     fun observeChapterProgress(chapterId: String): Flow<ReadingProgress?>
+    fun observeMangaProgress(mangaId: String): Flow<List<ReadingProgress>>
     fun observeReadChapterIds(mangaId: String): Flow<Set<String>>
     suspend fun clearProgress()
 }

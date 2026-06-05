@@ -3,6 +3,7 @@ package com.mangamojo.app.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mangamojo.app.core.MangaDex
+import com.mangamojo.app.domain.model.AdultContentMode
 import com.mangamojo.app.domain.model.AppSettings
 import com.mangamojo.app.domain.model.ReadingDirection
 import com.mangamojo.app.domain.model.ThemeMode
@@ -54,12 +55,13 @@ class SettingsViewModel @Inject constructor(
 
     fun onDataSaverChange(enabled: Boolean) = viewModelScope.launch { setDataSaver(enabled) }
 
-    fun onToggleContentRating(rating: String) {
-        val current = settings.value.contentRatings
-        val next = if (rating in current) current - rating else current + rating
-        // Never allow an empty set; fall back to the safe default.
-        val safe = next.ifEmpty { MangaDex.DEFAULT_CONTENT_RATINGS.toSet() }
-        viewModelScope.launch { setContentRatings(safe) }
+    fun onAdultContentModeChange(mode: AdultContentMode) {
+        val ratings = when (mode) {
+            AdultContentMode.OFF -> MangaDex.DEFAULT_CONTENT_RATINGS
+            AdultContentMode.MIXED -> MangaDex.MIXED_CONTENT_RATINGS
+            AdultContentMode.ADULT_ONLY -> MangaDex.ADULT_CONTENT_RATINGS
+        }.toSet()
+        viewModelScope.launch { setContentRatings(ratings) }
     }
 
     fun onClearCache() = viewModelScope.launch { clearCache() }

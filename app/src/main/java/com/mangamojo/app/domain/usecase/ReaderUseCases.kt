@@ -12,6 +12,11 @@ class SaveReadingProgressUseCase @Inject constructor(private val repo: LibraryRe
         repo.saveProgress(manga, chapter, page, total)
 }
 
+class SetChapterReadStateUseCase @Inject constructor(private val repo: LibraryRepository) {
+    suspend operator fun invoke(manga: MangaDetails, chapter: Chapter, read: Boolean) =
+        repo.setChapterReadState(manga, chapter, read)
+}
+
 class GetChapterProgressUseCase @Inject constructor(private val repo: LibraryRepository) {
     suspend operator fun invoke(chapterId: String): ReadingProgress? =
         repo.getChapterProgress(chapterId)
@@ -19,4 +24,8 @@ class GetChapterProgressUseCase @Inject constructor(private val repo: LibraryRep
 
 class ObserveReadChapterIdsUseCase @Inject constructor(private val repo: LibraryRepository) {
     operator fun invoke(mangaId: String): Flow<Set<String>> = repo.observeReadChapterIds(mangaId)
+}
+
+class ObserveMangaProgressUseCase @Inject constructor(private val repo: LibraryRepository) {
+    operator fun invoke(mangaId: String): Flow<List<ReadingProgress>> = repo.observeMangaProgress(mangaId)
 }
