@@ -16,4 +16,5 @@ interface SettingsRepository {
     suspend fun setDataSaver(enabled: Boolean)
     suspend fun setContentRatings(ratings: Set<String>)
     suspend fun setTranslatedLanguage(language: String)
+    suspend fun setPauseHistoryInAdultMode(enabled: Boolean)
 }

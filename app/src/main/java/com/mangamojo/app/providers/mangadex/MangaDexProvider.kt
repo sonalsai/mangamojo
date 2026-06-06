@@ -4,11 +4,13 @@ import com.mangamojo.app.core.MangaDex
 import com.mangamojo.app.core.SOURCE_MANGADEX
 import com.mangamojo.app.data.remote.MangaDexApi
 import com.mangamojo.app.data.remote.mapper.dedupeChapters
+import com.mangamojo.app.data.remote.mapper.toCategory
 import com.mangamojo.app.data.remote.mapper.toDetails
 import com.mangamojo.app.data.remote.mapper.toDomain
 import com.mangamojo.app.data.remote.mapper.toPages
 import com.mangamojo.app.data.remote.mapper.toSummary
 import com.mangamojo.app.domain.model.Chapter
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
@@ -59,6 +61,12 @@ class MangaDexProvider @Inject constructor(
         )
     }
 
+    override suspend fun getCategories(): List<MangaCategory> =
+        api.getMangaTags().data
+            .map { it.toCategory() }
+            .filter { it.name.isNotBlank() && it.group in SUPPORTED_CATEGORY_GROUPS }
+            .sortedWith(compareBy<MangaCategory> { it.group.categoryOrder() }.thenBy { it.name })
+
     override suspend fun getMangaDetails(mangaId: String): MangaDetails {
         val response = api.getManga(mangaId, MangaDex.MANGA_INCLUDES)
         val dto = response.data ?: throw NoSuchElementException("Manga $mangaId not found")
@@ -89,5 +97,17 @@ class MangaDexProvider @Inject constructor(
 
     override suspend fun getPages(chapterId: String, dataSaver: Boolean): List<Page> {
         return api.getAtHomeServer(chapterId).toPages(dataSaver)
+    }
+
+    private fun String.categoryOrder(): Int = when (this) {
+        "genre" -> 0
+        "theme" -> 1
+        "content" -> 2
+        "format" -> 3
+        else -> 3
+    }
+
+    private companion object {
+        val SUPPORTED_CATEGORY_GROUPS = setOf("genre", "theme", "content", "format")
     }
 }

@@ -5,8 +5,10 @@ import com.mangamojo.app.core.SOURCE_MANGADEX
 import com.mangamojo.app.data.remote.dto.AtHomeResponseDto
 import com.mangamojo.app.data.remote.dto.ChapterDto
 import com.mangamojo.app.data.remote.dto.MangaDto
+import com.mangamojo.app.data.remote.dto.TagDto
 import com.mangamojo.app.domain.model.Chapter
 import com.mangamojo.app.domain.model.Manga
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.MangaStatus
 import com.mangamojo.app.domain.model.Page
@@ -77,6 +79,12 @@ fun MangaDto.toDetails(): MangaDetails {
 }
 
 /** Readable label like "Vol. 2 Ch. 14 — The Promise". */
+fun TagDto.toCategory(): MangaCategory = MangaCategory(
+    id = id,
+    name = pickLocalized(attributes.name).ifBlank { "Category" },
+    group = attributes.group.orEmpty(),
+)
+
 private fun chapterLabel(volume: String?, chapter: String?, title: String?): String {
     val parts = buildList {
         if (!volume.isNullOrBlank()) add("Vol. $volume")

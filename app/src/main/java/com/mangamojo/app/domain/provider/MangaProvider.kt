@@ -1,6 +1,7 @@
 package com.mangamojo.app.domain.provider
 
 import com.mangamojo.app.domain.model.Chapter
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
@@ -28,6 +29,8 @@ interface MangaProvider {
     val name: String
 
     suspend fun search(query: SearchQuery): SearchResult
+
+    suspend fun getCategories(): List<MangaCategory>
 
     suspend fun getMangaDetails(mangaId: String): MangaDetails
 

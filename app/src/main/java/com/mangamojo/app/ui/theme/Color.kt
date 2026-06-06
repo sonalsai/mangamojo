@@ -12,7 +12,7 @@ data class MangaMojoPalette(
     val onAccent: Color,
 )
 
-val ShonenCrimsonPalette = MangaMojoPalette(
+val MangaMojo18PlusPalette = MangaMojoPalette(
     accent = Color(0xFFE50914),
     background = Color(0xFF0F0F10),
     surface = Color(0xFF1A1A1C),
@@ -41,15 +41,15 @@ val RetroShonenPalette = MangaMojoPalette(
 
 val MysticalDarkSagePalette = MangaMojoPalette(
     accent = Color(0xFF00C896),
-    background = Color(0xFF111612),
-    surface = Color(0xFF1C241E),
+    background = Color(0xFF070A08),
+    surface = Color(0xFF111412),
     primaryText = Color(0xFFF3F4F6),
-    secondaryText = Color(0xFF9CA3AF),
+    secondaryText = Color(0xFF8F98A3),
     onAccent = Color(0xFF07130F),
 )
 
 fun ThemePalette.toMangaMojoPalette(): MangaMojoPalette = when (this) {
-    ThemePalette.SHONEN_CRIMSON -> ShonenCrimsonPalette
+    ThemePalette.SHONEN_CRIMSON -> MangaMojo18PlusPalette
     ThemePalette.NEON_CYBERPUNK -> NeonCyberpunkPalette
     ThemePalette.RETRO_SHONEN -> RetroShonenPalette
     ThemePalette.MYSTICAL_DARK_SAGE -> MysticalDarkSagePalette

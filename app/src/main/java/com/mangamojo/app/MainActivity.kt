@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mangamojo.app.domain.model.AdultContentMode
 import com.mangamojo.app.ui.navigation.MangaMojoNavHost
 import com.mangamojo.app.ui.theme.MangaMojoTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,12 +28,13 @@ class MainActivity : ComponentActivity() {
             MangaMojoTheme(
                 themeMode = settings.themeMode,
                 themePalette = settings.themePalette,
+                adultContentMode = settings.adultContentMode,
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    MangaMojoNavHost()
+                    MangaMojoNavHost(isAdultMode = settings.adultContentMode == AdultContentMode.ADULT_ONLY)
                 }
             }
         }

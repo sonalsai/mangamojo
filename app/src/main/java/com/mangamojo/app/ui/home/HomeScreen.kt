@@ -69,6 +69,7 @@ fun HomeScreen(
     onSearch: () -> Unit,
     onSeeFavorites: () -> Unit,
     onSeeHistory: () -> Unit,
+    onSeeCategories: () -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -91,11 +92,32 @@ fun HomeScreen(
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
             title = {
-                Text(
-                    text = "MANGAMOJO",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.ExtraBold,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "MANGAMOJO",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    if (state.adultContentMode == AdultContentMode.ADULT_ONLY) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.error,
+                                    shape = RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "18+",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onError,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
             },
             navigationIcon = {
                 IconButton(onClick = onOpenDrawer) {
@@ -179,12 +201,13 @@ fun HomeScreen(
                     discover = discover,
                     onMangaClick = onMangaClick,
                     onRetry = viewModel::retry,
+                    onViewAll = onSeeCategories,
                 )
             }
 
             if (discover.items.size > 10) {
                 item {
-                    SectionHeader(title = "More to Explore")
+                    SectionHeader(title = "More to Explore", actionLabel = "View All", onAction = onSeeCategories)
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -208,6 +231,10 @@ fun HomeScreen(
                     }
                 }
             }
+
+            item {
+                CategoryPreviewSection(onViewAll = onSeeCategories)
+            }
         }
     }
 }
@@ -215,13 +242,18 @@ fun HomeScreen(
 @Composable
 private fun AdultModeIndicator(mode: AdultContentMode) {
     val message = when (mode) {
-        AdultContentMode.MIXED -> "Adult mode on - mixed results"
-        AdultContentMode.ADULT_ONLY -> "Adult only mode"
+        AdultContentMode.MIXED -> "Mixed: adult and normal titles"
+        AdultContentMode.ADULT_ONLY -> "MangaMojo18+ space"
         AdultContentMode.OFF -> return
     }
+    val accentColor = if (mode == AdultContentMode.ADULT_ONLY) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
     Surface(
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-        contentColor = MaterialTheme.colorScheme.primary,
+        color = accentColor.copy(alpha = 0.12f),
+        contentColor = accentColor,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
@@ -424,8 +456,8 @@ private fun DiscoverTabs(
                 onClick = { onSelect(tab) },
                 label = { Text(if (tab == DiscoverTab.POPULAR) "Popular Manga" else "Latest Updates") },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
                 ),
             )
         }
@@ -437,9 +469,10 @@ private fun DiscoverRail(
     discover: DiscoverState,
     onMangaClick: (String) -> Unit,
     onRetry: () -> Unit,
+    onViewAll: () -> Unit,
 ) {
     val title = if (discover.tab == DiscoverTab.POPULAR) "Popular Manga" else "Latest Updates"
-    SectionHeader(title = title)
+    SectionHeader(title = title, actionLabel = "View All", onAction = onViewAll)
     when {
         discover.loading && discover.items.isEmpty() -> Box(Modifier.fillMaxWidth().height(220.dp)) {
             LoadingState()
@@ -470,6 +503,62 @@ private fun DiscoverRail(
     }
 }
 
+@Composable
+private fun CategoryPreviewSection(onViewAll: () -> Unit) {
+    SectionHeader(title = "Categories", actionLabel = "View All", onAction = onViewAll)
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(homeCategories, key = { it.title }) { category ->
+            val accent = if (category.adult) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            Box(
+                modifier = Modifier
+                    .size(width = 136.dp, height = 112.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                accent.copy(alpha = 0.22f),
+                                MaterialTheme.colorScheme.surface,
+                            )
+                        )
+                    )
+                    .clickable(onClick = onViewAll)
+                    .padding(12.dp),
+            ) {
+                Text(
+                    text = category.group,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
+                Column(
+                    modifier = Modifier.align(Alignment.BottomStart),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        text = category.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = category.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
 private val Manga.metadata: String
     get() = listOf(status.label, contentRating.prettyLabel())
         .filter { it.isNotBlank() }
@@ -483,3 +572,18 @@ private val HistoryEntry.progressLabel: String
 
 private fun String.prettyLabel(): String =
     replaceFirstChar { it.uppercase() }
+
+private data class HomeCategoryPreview(
+    val title: String,
+    val subtitle: String,
+    val group: String,
+    val adult: Boolean = false,
+)
+
+private val homeCategories = listOf(
+    HomeCategoryPreview("Action", "Popular genre", "Genre"),
+    HomeCategoryPreview("Romance", "Relationship stories", "Genre"),
+    HomeCategoryPreview("Fantasy", "Magic and worlds", "Genre"),
+    HomeCategoryPreview("Doujinshi", "Fan-made works", "Format"),
+    HomeCategoryPreview("18+ Library", "Adult collections", "18+", adult = true),
+)

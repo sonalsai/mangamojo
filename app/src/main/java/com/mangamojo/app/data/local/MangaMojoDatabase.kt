@@ -24,7 +24,7 @@ import com.mangamojo.app.data.local.entity.ReadingProgressEntity
         ReadingProgressEntity::class,
         BookmarkEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

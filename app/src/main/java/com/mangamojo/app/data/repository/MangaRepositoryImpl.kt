@@ -8,6 +8,7 @@ import com.mangamojo.app.data.local.mapper.toCacheEntity
 import com.mangamojo.app.data.local.mapper.toDetails
 import com.mangamojo.app.data.local.mapper.toDomain
 import com.mangamojo.app.domain.model.Chapter
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
@@ -35,6 +36,8 @@ class MangaRepositoryImpl @Inject constructor(
 ) : MangaRepository {
 
     override suspend fun search(query: SearchQuery): SearchResult = provider.search(query)
+
+    override suspend fun getCategories(): List<MangaCategory> = provider.getCategories()
 
     override suspend fun getPopular(offset: Int, limit: Int): SearchResult =
         provider.search(SearchQuery(title = null, offset = offset, limit = limit, sort = SearchSort.POPULAR))

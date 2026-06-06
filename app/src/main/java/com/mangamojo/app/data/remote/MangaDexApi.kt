@@ -4,6 +4,7 @@ import com.mangamojo.app.data.remote.dto.AtHomeResponseDto
 import com.mangamojo.app.data.remote.dto.ChapterListResponseDto
 import com.mangamojo.app.data.remote.dto.MangaListResponseDto
 import com.mangamojo.app.data.remote.dto.MangaResponseDto
+import com.mangamojo.app.data.remote.dto.TagListResponseDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -38,6 +39,9 @@ interface MangaDexApi {
         @Path("id") id: String,
         @Query("includes[]") includes: List<String>,
     ): MangaResponseDto
+
+    @GET("manga/tag")
+    suspend fun getMangaTags(): TagListResponseDto
 
     @GET("manga/{id}/feed")
     suspend fun getMangaFeed(

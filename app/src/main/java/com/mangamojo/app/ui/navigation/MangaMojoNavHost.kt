@@ -40,7 +40,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mangamojo.app.ui.categories.CategoryMangaScreen
 import com.mangamojo.app.reader.ReaderScreen
+import com.mangamojo.app.ui.categories.CategoriesScreen
 import com.mangamojo.app.ui.details.DetailsScreen
 import com.mangamojo.app.ui.favorites.FavoritesScreen
 import com.mangamojo.app.ui.history.HistoryScreen
@@ -50,7 +52,7 @@ import com.mangamojo.app.ui.settings.SettingsScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun MangaMojoNavHost(navController: NavHostController = rememberNavController()) {
+fun MangaMojoNavHost(navController: NavHostController = rememberNavController(), isAdultMode: Boolean = false) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showDrawer = TopLevelDestination.entries.any { it.route == currentRoute }
@@ -64,10 +66,11 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = showDrawer,
-        scrimColor = MaterialTheme.colorScheme.background.copy(alpha = 0.58f),
+        scrimColor = Color.Black.copy(alpha = 0.64f),
         drawerContent = {
             MangaMojoDrawer(
                 currentRoute = currentRoute,
+                isAdultMode = isAdultMode,
                 onDestinationClick = { route ->
                     scope.launch { drawerState.close() }
                     navController.navigateToTab(route)
@@ -90,6 +93,7 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
                         onSearch = { navController.navigateToTab(Routes.SEARCH) },
                         onSeeFavorites = { navController.navigateToTab(Routes.FAVORITES) },
                         onSeeHistory = { navController.navigateToTab(Routes.HISTORY) },
+                        onSeeCategories = { navController.navigateToTab(Routes.CATEGORIES) },
                         onOpenDrawer = openDrawer,
                     )
                 }
@@ -97,6 +101,23 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
                 composable(Routes.SEARCH) {
                     SearchScreen(
                         onMangaClick = { navController.navigate(Routes.details(it)) },
+                        onOpenDrawer = openDrawer,
+                    )
+                }
+
+                composable(Routes.CATEGORIES) {
+                    CategoriesScreen(
+                        onCategoryClick = { category ->
+                            navController.navigate(
+                                Routes.category(
+                                    id = category.id,
+                                    name = category.title,
+                                    group = category.group,
+                                    tagIds = category.tagIds,
+                                    ratings = category.contentRatings,
+                                )
+                            )
+                        },
                         onOpenDrawer = openDrawer,
                     )
                 }
@@ -143,6 +164,34 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
                 ) {
                     ReaderScreen(onBack = { navController.popBackStack() })
                 }
+
+                composable(
+                    route = Routes.CATEGORY_RESULTS,
+                    arguments = listOf(
+                        navArgument(Routes.ARG_CATEGORY_ID) { type = NavType.StringType },
+                        navArgument(Routes.ARG_CATEGORY_NAME) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                        navArgument(Routes.ARG_CATEGORY_GROUP) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                        navArgument(Routes.ARG_CATEGORY_TAG_IDS) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                        navArgument(Routes.ARG_CATEGORY_RATINGS) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                    ),
+                ) {
+                    CategoryMangaScreen(
+                        onBack = { navController.popBackStack() },
+                        onMangaClick = { navController.navigate(Routes.details(it)) },
+                    )
+                }
             }
         }
     }
@@ -151,6 +200,7 @@ fun MangaMojoNavHost(navController: NavHostController = rememberNavController())
 @Composable
 private fun MangaMojoDrawer(
     currentRoute: String?,
+    isAdultMode: Boolean = false,
     onDestinationClick: (String) -> Unit,
 ) {
     ModalDrawerSheet(
@@ -165,7 +215,7 @@ private fun MangaMojoDrawer(
                 .fillMaxHeight()
                 .padding(horizontal = 18.dp, vertical = 24.dp),
         ) {
-            DrawerHeader()
+            DrawerHeader(isAdultMode = isAdultMode)
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f))
             Spacer(Modifier.height(18.dp))
 
@@ -203,7 +253,7 @@ private fun MangaMojoDrawer(
 }
 
 @Composable
-private fun DrawerHeader() {
+private fun DrawerHeader(isAdultMode: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,7 +264,7 @@ private fun DrawerHeader() {
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.09f)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -225,14 +275,38 @@ private fun DrawerHeader() {
             )
         }
         Spacer(Modifier.size(12.dp))
-        Text(
-            text = "MANGAMOJO",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "MANGAMOJO",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (isAdultMode) {
+                Spacer(Modifier.size(6.dp))
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.error,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "18+",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onError,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -261,7 +335,7 @@ private fun DrawerNavItem(
             .height(50.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                 else Color.Transparent,
             )
             .clickable(onClick = onClick)

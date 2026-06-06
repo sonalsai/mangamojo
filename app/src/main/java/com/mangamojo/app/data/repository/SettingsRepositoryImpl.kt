@@ -32,6 +32,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val DATA_SAVER = booleanPreferencesKey("data_saver")
         val CONTENT_RATINGS = stringSetPreferencesKey("content_ratings")
         val LANGUAGE = stringPreferencesKey("translated_language")
+        val PAUSE_HISTORY_IN_ADULT_MODE = booleanPreferencesKey("pause_history_in_adult_mode")
     }
 
     override val settings: Flow<AppSettings> = dataStore.data
@@ -44,6 +45,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 dataSaver = prefs[Keys.DATA_SAVER] ?: false,
                 contentRatings = prefs[Keys.CONTENT_RATINGS] ?: MangaDex.DEFAULT_CONTENT_RATINGS.toSet(),
                 translatedLanguage = prefs[Keys.LANGUAGE] ?: MangaDex.DEFAULT_LANGUAGE,
+                pauseHistoryInAdultMode = prefs[Keys.PAUSE_HISTORY_IN_ADULT_MODE] ?: false,
             )
         }
 
@@ -69,6 +71,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setTranslatedLanguage(language: String) {
         dataStore.edit { it[Keys.LANGUAGE] = language }
+    }
+
+    override suspend fun setPauseHistoryInAdultMode(enabled: Boolean) {
+        dataStore.edit { it[Keys.PAUSE_HISTORY_IN_ADULT_MODE] = enabled }
     }
 }
 

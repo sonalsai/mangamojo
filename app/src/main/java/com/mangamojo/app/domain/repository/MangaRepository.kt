@@ -1,6 +1,7 @@
 package com.mangamojo.app.domain.repository
 
 import com.mangamojo.app.domain.model.Chapter
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.Flow
 interface MangaRepository {
 
     suspend fun search(query: SearchQuery): SearchResult
+
+    suspend fun getCategories(): List<MangaCategory>
 
     suspend fun getPopular(offset: Int, limit: Int): SearchResult
 

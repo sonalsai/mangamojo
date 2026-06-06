@@ -454,8 +454,8 @@ private fun ChapterListControls(
                         onClick = { onReadFilterChange(filter) },
                         label = { Text(filter.label) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                            selectedLabelColor = MaterialTheme.colorScheme.primary,
                         ),
                     )
                 }

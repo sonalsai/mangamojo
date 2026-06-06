@@ -15,6 +15,7 @@ import com.mangamojo.app.domain.usecase.ObserveCachedCountUseCase
 import com.mangamojo.app.domain.usecase.ObserveSettingsUseCase
 import com.mangamojo.app.domain.usecase.SetContentRatingsUseCase
 import com.mangamojo.app.domain.usecase.SetDataSaverUseCase
+import com.mangamojo.app.domain.usecase.SetPauseHistoryInAdultModeUseCase
 import com.mangamojo.app.domain.usecase.SetReadingDirectionUseCase
 import com.mangamojo.app.domain.usecase.SetThemeModeUseCase
 import com.mangamojo.app.domain.usecase.SetThemePaletteUseCase
@@ -34,6 +35,7 @@ class SettingsViewModel @Inject constructor(
     private val setReadingDirection: SetReadingDirectionUseCase,
     private val setDataSaver: SetDataSaverUseCase,
     private val setContentRatings: SetContentRatingsUseCase,
+    private val setPauseHistoryInAdultMode: SetPauseHistoryInAdultModeUseCase,
     private val clearCache: ClearCacheUseCase,
     private val clearHistory: ClearHistoryUseCase,
     private val clearFavorites: ClearFavoritesUseCase,
@@ -63,6 +65,9 @@ class SettingsViewModel @Inject constructor(
         }.toSet()
         viewModelScope.launch { setContentRatings(ratings) }
     }
+
+    fun onPauseHistoryInAdultModeChange(enabled: Boolean) =
+        viewModelScope.launch { setPauseHistoryInAdultMode(enabled) }
 
     fun onClearCache() = viewModelScope.launch { clearCache() }
     fun onClearHistory() = viewModelScope.launch { clearHistory() }

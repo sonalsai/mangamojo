@@ -104,6 +104,7 @@ fun HistoryEntity.toDomain(): HistoryEntry = HistoryEntry(
     sourceId = sourceId,
     title = title,
     coverUrl = coverUrl,
+    contentRating = contentRating,
     chapterId = chapterId,
     chapterLabel = chapterLabel,
     page = page,

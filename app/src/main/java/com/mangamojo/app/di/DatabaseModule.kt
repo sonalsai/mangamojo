@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mangamojo.app.data.local.MangaMojoDatabase
 import com.mangamojo.app.data.local.dao.BookmarkDao
 import com.mangamojo.app.data.local.dao.FavoriteDao
@@ -26,11 +28,23 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
+    private val MIGRATION_1_2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE history ADD COLUMN contentRating TEXT NOT NULL DEFAULT 'safe'")
+            db.execSQL(
+                "UPDATE history SET contentRating = COALESCE(" +
+                    "(SELECT contentRating FROM cached_manga WHERE cached_manga.mangaId = history.mangaId), " +
+                    "'safe'" +
+                    ")"
+            )
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): MangaMojoDatabase =
         Room.databaseBuilder(context, MangaMojoDatabase::class.java, MangaMojoDatabase.NAME)
-            // Phase 1 has no migrations yet; recreate on schema change.
+            .addMigrations(MIGRATION_1_2)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 

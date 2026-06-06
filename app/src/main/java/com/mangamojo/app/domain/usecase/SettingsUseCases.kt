@@ -35,3 +35,7 @@ class SetContentRatingsUseCase @Inject constructor(private val repo: SettingsRep
 class SetTranslatedLanguageUseCase @Inject constructor(private val repo: SettingsRepository) {
     suspend operator fun invoke(language: String) = repo.setTranslatedLanguage(language)
 }
+
+class SetPauseHistoryInAdultModeUseCase @Inject constructor(private val repo: SettingsRepository) {
+    suspend operator fun invoke(enabled: Boolean) = repo.setPauseHistoryInAdultMode(enabled)
+}

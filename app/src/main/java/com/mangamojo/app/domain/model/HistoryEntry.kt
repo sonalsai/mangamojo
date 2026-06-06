@@ -10,6 +10,7 @@ data class HistoryEntry(
     val sourceId: String,
     val title: String,
     val coverUrl: String?,
+    val contentRating: String,
     val chapterId: String,
     val chapterLabel: String,
     val page: Int,

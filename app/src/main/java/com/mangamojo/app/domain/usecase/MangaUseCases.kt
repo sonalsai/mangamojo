@@ -1,6 +1,7 @@
 package com.mangamojo.app.domain.usecase
 
 import com.mangamojo.app.domain.model.Chapter
+import com.mangamojo.app.domain.model.MangaCategory
 import com.mangamojo.app.domain.model.MangaDetails
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
@@ -11,6 +12,10 @@ import javax.inject.Inject
 
 class SearchMangaUseCase @Inject constructor(private val repo: MangaRepository) {
     suspend operator fun invoke(query: SearchQuery): SearchResult = repo.search(query)
+}
+
+class GetMangaCategoriesUseCase @Inject constructor(private val repo: MangaRepository) {
+    suspend operator fun invoke(): List<MangaCategory> = repo.getCategories()
 }
 
 class GetPopularMangaUseCase @Inject constructor(private val repo: MangaRepository) {

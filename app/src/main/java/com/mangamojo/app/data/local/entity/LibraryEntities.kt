@@ -21,6 +21,7 @@ data class HistoryEntity(
     val sourceId: String,
     val title: String,
     val coverUrl: String?,
+    val contentRating: String = "safe",
     val chapterId: String,
     val chapterLabel: String,
     val page: Int,

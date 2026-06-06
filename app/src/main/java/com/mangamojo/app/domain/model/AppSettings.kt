@@ -36,6 +36,7 @@ data class AppSettings(
     val dataSaver: Boolean = false,
     val contentRatings: Set<String> = MangaDex.DEFAULT_CONTENT_RATINGS.toSet(),
     val translatedLanguage: String = MangaDex.DEFAULT_LANGUAGE,
+    val pauseHistoryInAdultMode: Boolean = false,
 ) {
     val adultContentMode: AdultContentMode
         get() {

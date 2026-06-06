@@ -95,6 +95,7 @@ class LibraryRepositoryImpl @Inject constructor(
                 sourceId = manga.sourceId,
                 title = manga.title,
                 coverUrl = manga.coverUrl,
+                contentRating = manga.contentRating,
                 chapterId = chapter.id,
                 chapterLabel = chapter.label,
                 page = furthest,

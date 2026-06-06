@@ -58,6 +58,12 @@ data class MangaResponseDto(
 )
 
 @Serializable
+data class TagListResponseDto(
+    val result: String? = null,
+    val data: List<TagDto> = emptyList(),
+)
+
+@Serializable
 data class MangaDto(
     val id: String,
     val type: String? = null,

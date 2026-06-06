@@ -12,8 +12,8 @@ import com.mangamojo.app.domain.model.HistoryEntry
 import com.mangamojo.app.domain.model.Manga
 import com.mangamojo.app.domain.model.SearchQuery
 import com.mangamojo.app.domain.model.SearchSort
+import com.mangamojo.app.domain.usecase.ObserveContinueReadingUseCase
 import com.mangamojo.app.domain.usecase.ObserveFavoritesUseCase
-import com.mangamojo.app.domain.usecase.ObserveHistoryUseCase
 import com.mangamojo.app.domain.usecase.ObserveSettingsUseCase
 import com.mangamojo.app.domain.usecase.SearchMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,7 +66,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     observeFavorites: ObserveFavoritesUseCase,
-    observeHistory: ObserveHistoryUseCase,
+    observeContinueReading: ObserveContinueReadingUseCase,
     private val searchManga: SearchMangaUseCase,
     observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
@@ -79,14 +79,14 @@ class HomeViewModel @Inject constructor(
 
     val uiState: StateFlow<HomeUiState> = combine(
         observeFavorites(),
-        observeHistory(),
+        observeContinueReading(),
         weeklyPopular,
         discover,
         settings,
     ) { favorites, history, weeklyPopularState, discoverState, settings ->
         HomeUiState(
             favorites = favorites,
-            history = history,
+            history = history.filterForMode(settings.adultContentMode),
             weeklyPopular = weeklyPopularState,
             discover = discoverState,
             adultContentMode = settings.adultContentMode,
@@ -202,5 +202,16 @@ class HomeViewModel @Inject constructor(
 
     private companion object {
         const val WEEKLY_POPULAR_LIMIT = 5
+    }
+}
+
+private fun List<HistoryEntry>.filterForMode(mode: AdultContentMode): List<HistoryEntry> {
+    val adultRatings = MangaDex.ADULT_CONTENT_RATINGS.toSet()
+    return filterNot { it.isCompleted }.let { unfinished ->
+        when (mode) {
+            AdultContentMode.ADULT_ONLY -> unfinished.filter { it.contentRating in adultRatings }
+            AdultContentMode.MIXED -> unfinished
+            AdultContentMode.OFF -> unfinished.filterNot { it.contentRating in adultRatings }
+        }
     }
 }
