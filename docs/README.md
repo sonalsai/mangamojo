@@ -1,10 +1,10 @@
-# 📖 MangaMojo — Documentation
+# MangaMojo Documentation
 
 **MangaMojo** is a local-first manga reader for Android with a clean, fast reader UI.
-It is built as a *reader UI on top of a pluggable source layer*. **Phase 1 (v1.0.0)**
-ships a fully working end-to-end flow using **MangaDex** as the only source:
+It is built as a *reader UI on top of a pluggable source layer*. **Current release (v1.1.0)**
+ships a fully working end-to-end flow:
 
-> search → details → chapter list → reader → save progress → favorites / history
+> search -> details -> chapter list -> reader -> save progress -> favorites / history
 
 No accounts, no backend, no cloud sync. Everything the user owns (favorites, history,
 bookmarks, reading progress, cached metadata) lives on-device.
@@ -17,20 +17,20 @@ bookmarks, reading progress, cached metadata) lives on-device.
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layered/clean architecture, package map, data flow, provider abstraction, DI graph, persistence schema, networking, caching, background sync, reader internals |
 | [DATA_MODEL.md](DATA_MODEL.md) | Domain models, Room entities & DAOs, settings keys |
-| [CHANGELOG.md](CHANGELOG.md) | Release history (starts at **v1.0.0**) and versioning policy |
-| [ROADMAP.md](ROADMAP.md) | Phase 2 plan — multi-provider, merging, fallback, paged reader |
+| [CHANGELOG.md](CHANGELOG.md) | Release history, latest tag, and versioning policy |
+| [ROADMAP.md](ROADMAP.md) | Phase 2 plan - multi-provider, merging, fallback, paged reader |
 
 ---
 
-## Feature summary (v1.0.0)
+## Feature summary (v1.1.0)
 
-- **Home** — Library preview rail plus a **Popular / Latest** discovery feed (chip-pill tabs) shown as a vertical grid that paginates as you scroll.
-- **Search** — Debounced MangaDex search with an infinite-scroll grid and loading/empty/error states.
-- **Details** — Cover, title, authors/artists, status, description, tags, favorite toggle, and the full chapter list with read indicators. External (off-site) chapters open in the browser.
-- **Reader** — Vertical (webtoon) reader with nearby-page preloading, resume-from-last-page, next/previous chapter navigation, and automatic progress saving.
-- **Library / History** — Reactive favorites and reading history, each clearable.
-- **Settings** — Theme mode, color theme, reading-direction placeholder, data saver, content ratings, and clear cache/history/favorites.
-- **Background** — WorkManager jobs for periodic cache cleanup and favorites refresh.
+- **Home** - Library preview rail plus a **Popular / Latest** discovery feed (chip-pill tabs) shown as a vertical grid that paginates as you scroll.
+- **Search** - Debounced search with an infinite-scroll grid and loading/empty/error states.
+- **Details** - Cover, title, authors/artists, status, description, tags, favorite toggle, and the full chapter list with read indicators. External (off-site) chapters open in the browser.
+- **Reader** - Vertical (webtoon) reader with nearby-page preloading, resume-from-last-page, next/previous chapter navigation, and automatic progress saving.
+- **Library / History** - Reactive favorites and reading history, each clearable.
+- **Settings** - Theme mode, color theme, reading-direction placeholder, data saver, content ratings, and clear cache/history/favorites.
+- **Background** - WorkManager jobs for periodic cache cleanup and favorites refresh.
 
 ---
 
@@ -49,7 +49,7 @@ bookmarks, reading progress, cached metadata) lives on-device.
 | Background | WorkManager 2.11.2 |
 | Navigation | Navigation Compose 2.9.8 |
 
-**Build toolchain:** AGP 9.1.1 · Gradle 9.3.1 · KSP 2.2.10-2.0.2 · compileSdk 36.1 · minSdk 26 · targetSdk 36.
+**Build toolchain:** AGP 9.1.1, Gradle 9.3.1, KSP 2.2.10-2.0.2, compileSdk 36.1, minSdk 26, targetSdk 36.
 
 ---
 
@@ -67,12 +67,10 @@ Output APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
 > **AGP 9 note:** this project uses AGP's *built-in Kotlin* (no separate `kotlin-android`
 > plugin). KSP (Room/Hilt code generation) requires
-> `android.disallowKotlinSourceSets=false` in `gradle.properties` — already set.
+> `android.disallowKotlinSourceSets=false` in `gradle.properties` - already set.
 
 ---
 
 ## Attribution
 
-Manga metadata, covers, and pages are provided by [MangaDex](https://mangadex.org) via its
-[public API](https://api.mangadex.org/docs/). MangaMojo is an independent client and is not
-affiliated with MangaDex. Please support scanlation groups and original creators.
+Please support scanlation groups and original creators.

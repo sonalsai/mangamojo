@@ -2,7 +2,7 @@
 
 MangaMojo follows a layered, **clean-architecture** approach. The guiding rule is that
 dependencies point **inward**: UI depends on domain; data depends on domain; **domain
-depends on nothing**. Everything source-specific (MangaDex DTOs, endpoint quirks) is
+depends on nothing**. Everything source-specific (provider DTOs, endpoint quirks) is
 isolated behind a provider interface so additional sources can be added later without
 touching UI or domain code.
 
@@ -21,8 +21,8 @@ so promoting layers to separate Gradle modules later is mechanical.
 └───────────────▲───────────────────────────▲────────────────────┘
                 │ implements                 │ implements
 ┌───────────────┴───────────┐   ┌───────────┴────────────────────┐
-│  data (repository impls,    │   │  providers/mangadex            │
-│  Room, Retrofit, DataStore) │◄──┤  (MangaDexProvider)            │
+│  data (repository impls,    │   │  providers                     │
+│  Room, Retrofit, DataStore) │◄──┤  (provider implementations)     │
 └────────────────────────────┘   └────────────────────────────────┘
                 ▲
                 │ provides
@@ -38,15 +38,15 @@ so promoting layers to separate Gradle modules later is mechanical.
 | Package | Responsibility |
 | --- | --- |
 | `com.mangamojo.app` | `MainActivity` (Compose host), `MainViewModel` (theme), `MangaMojoApp` (Hilt + WorkManager config + Coil image loader) |
-| `core` | `Constants` (MangaDex URLs, cache policy), `AppError` + `toAppError()` (error normalization), `UiState` (generic sealed UI state) |
+| `core` | `Constants` (cache policy), `AppError` + `toAppError()` (error normalization), `UiState` (generic sealed UI state) |
 | `domain.model` | Source-agnostic models: `Manga`, `MangaDetails`, `Chapter`, `Page`, `SearchResult`, `SearchQuery`, `ReadingProgress`, `Favorite`, `HistoryEntry`, `AppSettings`, enums |
 | `domain.provider` | `MangaProvider` — the source seam |
 | `domain.repository` | `MangaRepository`, `LibraryRepository`, `SettingsRepository` (interfaces) |
 | `domain.usecase` | Thin use cases grouped by feature (Manga / Library / Reader / Settings) |
-| `data.remote` | `MangaDexApi` (Retrofit), `dto/` (serialization models), `mapper/` (DTO→domain), `RetryInterceptor` |
+| `data.remote` | API client (Retrofit), `dto/` (serialization models), `mapper/` (DTO→domain), `RetryInterceptor` |
 | `data.local` | `MangaMojoDatabase` (Room), `entity/`, `dao/`, `Converters`, `mapper/` (entity↔domain) |
 | `data.repository` | Repository implementations that coordinate provider + cache + DataStore |
-| `providers.mangadex` | `MangaDexProvider` — the only concrete provider in Phase 1 |
+| `providers` | Concrete provider implementations |
 | `di` | Hilt modules: `NetworkModule`, `DatabaseModule`, `RepositoryModule`, `ProviderModule` |
 | `sync` | `CacheCleanupWorker`, `LibraryRefreshWorker` (`@HiltWorker`), `SyncScheduler` |
 | `reader` | `ReaderViewModel` + `ReaderScreen` (page rendering, preloading, progress) |
@@ -85,8 +85,8 @@ runs in `viewModelScope`; reactive reads use `stateIn(...)` with
 
 ```kotlin
 interface MangaProvider {
-    val id: String          // "mangadex"
-    val name: String        // "MangaDex"
+    val id: String          // e.g. "mangadex", "another_source"
+    val name: String        // e.g. "MangaDex", "Another Source"
     suspend fun search(query: SearchQuery): SearchResult
     suspend fun getMangaDetails(mangaId: String): MangaDetails
     suspend fun getChapters(mangaId: String, languages: List<String>): List<Chapter>
@@ -94,11 +94,9 @@ interface MangaProvider {
 }
 ```
 
-- `MangaDexProvider` owns every MangaDex-specific detail: the `key[]=` array query
-  convention, `includes[]=cover_art,author,artist`, the `/manga/{id}/feed` pagination, the
-  MangaDex@Home `/at-home/server/{id}` page-delivery flow, and chapter de-duplication.
-- It returns **only normalized domain models** — DTOs never escape the `data.remote` layer.
-- `ProviderModule` binds the single provider today. **Phase 2** switches this to a Hilt
+- Provider implementations own all source-specific details (query conventions, includes, pagination patterns, page-delivery flow, data normalization).
+- They return **only normalized domain models** — DTOs never escape the `data.remote` layer.
+- `ProviderModule` binds the provider(s) today. **Phase 2** switches this to a Hilt
   multibinding (`@Binds @IntoSet`) and lets the repository iterate a `Set<MangaProvider>`
   to merge results, fall back across sources, and apply priority ordering. Every domain
   model and Room row already carries a `sourceId` for exactly this reason.
@@ -111,10 +109,10 @@ All graphs are installed in `SingletonComponent`:
 
 | Module | Provides |
 | --- | --- |
-| `NetworkModule` | `Json`, `OkHttpClient` (User-Agent, timeouts, `RetryInterceptor`, debug logging), `Retrofit` (kotlinx-serialization converter), `MangaDexApi` |
+| `NetworkModule` | `Json`, `OkHttpClient` (User-Agent, timeouts, `RetryInterceptor`, debug logging), `Retrofit` (kotlinx-serialization converter), API clients |
 | `DatabaseModule` | `MangaMojoDatabase`, each DAO, and the settings `DataStore<Preferences>` |
 | `RepositoryModule` | `@Binds` the three repository interfaces to their impls |
-| `ProviderModule` | `@Binds` `MangaProvider` → `MangaDexProvider` |
+| `ProviderModule` | `@Binds` `MangaProvider` → provider implementation(s) |
 
 `MangaMojoApp` is `@HiltAndroidApp` and also:
 - implements `Configuration.Provider` to supply a `HiltWorkerFactory` so workers can be
@@ -126,14 +124,13 @@ All graphs are installed in `SingletonComponent`:
 
 ## Networking
 
-- Base URL `https://api.mangadex.org/`; covers from `https://uploads.mangadex.org`.
 - `OkHttpClient`: 15 s connect / 20 s read / 15 s write timeouts, a polite `User-Agent`,
   `Accept: application/json`, and a `RetryInterceptor` that retries transient `429`/`5xx`
   once with a fixed backoff.
 - `Json` is configured with `ignoreUnknownKeys`, `coerceInputValues`, `isLenient`,
   `explicitNulls = false`.
-- A `LenientStringMapSerializer` coerces MangaDex's occasional `[]`-for-empty-object quirk
-  (seen on `description`) back into an empty map so decoding never crashes.
+- A `LenientStringMapSerializer` coerces provider-specific quirks (e.g., occasional
+  `[]`-for-empty-object) back into an empty map so decoding never crashes.
 
 ---
 

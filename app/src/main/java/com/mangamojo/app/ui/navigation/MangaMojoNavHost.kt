@@ -243,7 +243,7 @@ private fun MangaMojoDrawer(
                 onClick = { onDestinationClick(TopLevelDestination.SETTINGS.route) },
             )
             Text(
-                text = "MangaDex source",
+                text = "Content source",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

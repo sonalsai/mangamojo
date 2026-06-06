@@ -14,7 +14,7 @@ sealed class AppError(val userMessage: String) {
     data object Network : AppError("Network error — check your connection and try again.")
     data object Timeout : AppError("Request timed out — please try again.")
     data object NotFound : AppError("We couldn't find that. It may have been removed.")
-    data class Server(val code: Int) : AppError("MangaDex is having trouble ($code). Try again later.")
+    data class Server(val code: Int) : AppError("Server error ($code). Try again later.")
     data class Unknown(val detail: String?) : AppError(detail ?: "Something went wrong.")
 }
 
@@ -27,6 +27,6 @@ fun Throwable.toAppError(): AppError = when (this) {
         in 500..599 -> AppError.Server(code())
         else -> AppError.Server(code())
     }
-    is SerializationException -> AppError.Unknown("Unexpected response from MangaDex.")
+    is SerializationException -> AppError.Unknown("Unexpected response from server.")
     else -> AppError.Unknown(message)
 }

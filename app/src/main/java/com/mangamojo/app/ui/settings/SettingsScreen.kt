@@ -245,7 +245,7 @@ fun SettingsScreen(
             }
 
             Text(
-                text = "MangaMojo - Source: MangaDex",
+                text = "MangaMojo",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 20.dp),

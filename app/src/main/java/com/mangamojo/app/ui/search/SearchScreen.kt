@@ -137,7 +137,7 @@ fun SearchScreen(
                 !state.hasSearched ->
                     EmptyState(
                         title = "Find your next binge",
-                        message = "Search MangaDex and browse results as poster cards.",
+                        message = "Search and browse results as poster cards.",
                         icon = Icons.Rounded.Search,
                     )
 
