@@ -24,12 +24,29 @@ MangaMojo follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH
 
 ## [1.1.0] - 2026-06-06
 
-Current latest release tag.
+Current latest release tag. Patch release with UI enhancements, customization options, and new content browsing features.
+
+### Added
+
+**Customization & themes**
+- **Theme Palette selection** — 4 new color themes: Shonen Crimson (default), Neon Cyberpunk, Retro Shonen, and Mystical Dark Sage.
+  Theme is persisted in Settings and applied app-wide for a consistent visual experience.
+- **Adult Content Settings** — New content filtering modes (OFF, MIXED, ADULT_ONLY) to control visibility of mature content.
+  Automatic detection based on selected content ratings with UI indicators.
+
+**Discovery & browsing**
+- **Categories Feature** — Browse manga by provider-supplied categories/tags. New `MangaCategory` model with ID, name, and group.
+  `getCategories()` added to `MangaProvider` contract for Phase 2 multi-provider support.
+
+**Settings enhancements**
+- **Pause History in Adult Mode** — New toggle to optionally prevent reading history logging when adult content mode is active.
+- Settings screen updated to expose new theme palette and adult content controls.
 
 ### Changed
 - Bumped Android app metadata to `versionName = "1.1.0"` and `versionCode = 2`.
-- Updated the main README and downloads index so users can click a version and download
-  that APK directly.
+- Updated the main README and downloads index so users can click a version and download that APK directly.
+- Expanded `AppSettings` data model to include `themePalette` and `pauseHistoryInAdultMode`.
+- Enhanced `MangaProvider` contract with `getCategories()` method and category browsing support.
 
 ## [1.0.0] - 2026-06-03
 
