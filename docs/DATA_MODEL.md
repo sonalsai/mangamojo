@@ -10,9 +10,9 @@ so the same types can hold data from multiple providers without schema changes.
 | `Manga` | `id, sourceId, title, coverUrl, status, contentRating, year` - list/grid summary |
 | `MangaDetails` | summary + `altTitles, description, authors, artists, tags, availableLanguages`; `toManga()` collapses to a summary |
 | `Chapter` | `id, sourceId, mangaId, volume, chapter, title, pages, translatedLanguage, scanlationGroup, publishAt, externalUrl, label`; `isExternal` |
-| `Page` | `index, imageUrl` |
+| `Page` | `index, imageUrl, headers` |
 | `SearchResult` | `items, total, offset, limit`; `hasMore`, `nextOffset` |
-| `SearchQuery` | `title, offset, limit, sort (SearchSort), contentRatings, includedTagIds` |
+| `SearchQuery` | `title, offset, limit, sort (SearchSort), contentRatings, includedTagIds, sourceId` |
 | `ReadingProgress` | `mangaId, chapterId, page, total, completed, updatedAt` |
 | `Favorite` | `mangaId, sourceId, title, coverUrl, status, addedAt` |
 | `HistoryEntry` | `mangaId, sourceId, title, coverUrl, chapterId, chapterLabel, page, total, readAt`; `isCompleted`, `progressFraction` |
@@ -51,5 +51,4 @@ migrations needed yet). Real migrations will be added when the schema changes.
 | `data_saver` | Boolean | `false` |
 | `content_ratings` | String set | `["safe", "suggestive"]` |
 | `translated_language` | String | `en` |
-
 

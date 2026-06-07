@@ -14,14 +14,14 @@ import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.domain.model.SearchQuery
 import com.mangamojo.app.domain.model.SearchResult
 import com.mangamojo.app.domain.model.SearchSort
-import com.mangamojo.app.domain.provider.MangaProvider
+import com.mangamojo.app.domain.provider.ProviderManager
 import com.mangamojo.app.domain.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Coordinates the active [MangaProvider] with the local Room cache. Details and
+ * Coordinates the active providers with the local Room cache. Details and
  * chapter lists are read-through cached so previously-viewed manga stay
  * available offline, and the cache is used as a fallback when the network
  * fails. (Search results are intentionally not cached — they're query-specific
@@ -29,18 +29,18 @@ import javax.inject.Singleton
  */
 @Singleton
 class MangaRepositoryImpl @Inject constructor(
-    private val provider: MangaProvider,
+    private val providerManager: ProviderManager,
     private val cacheDao: MangaCacheDao,
     private val favoriteDao: FavoriteDao,
     private val historyDao: HistoryDao,
 ) : MangaRepository {
 
-    override suspend fun search(query: SearchQuery): SearchResult = provider.search(query)
+    override suspend fun search(query: SearchQuery): SearchResult = providerManager.search(query)
 
-    override suspend fun getCategories(): List<MangaCategory> = provider.getCategories()
+    override suspend fun getCategories(): List<MangaCategory> = providerManager.getCategories()
 
     override suspend fun getPopular(offset: Int, limit: Int): SearchResult =
-        provider.search(SearchQuery(title = null, offset = offset, limit = limit, sort = SearchSort.POPULAR))
+        providerManager.search(SearchQuery(title = null, offset = offset, limit = limit, sort = SearchSort.POPULAR))
 
     override suspend fun getMangaDetails(mangaId: String, forceRefresh: Boolean): MangaDetails {
         val now = System.currentTimeMillis()
@@ -49,7 +49,7 @@ class MangaRepositoryImpl @Inject constructor(
         if (cached != null && fresh && !forceRefresh) return cached.toDetails()
 
         return try {
-            val details = provider.getMangaDetails(mangaId)
+            val details = providerManager.providerForResource(mangaId).getMangaDetails(mangaId)
             cacheDao.upsertManga(details.toCacheEntity(now))
             details
         } catch (e: Exception) {
@@ -70,7 +70,8 @@ class MangaRepositoryImpl @Inject constructor(
         if (cached.isNotEmpty() && fresh && !forceRefresh) return cached.map { it.toDomain() }
 
         return try {
-            val chapters = provider.getChapters(mangaId, languages)
+            val details = cacheDao.getManga(mangaId)?.toDetails() ?: getMangaDetails(mangaId)
+            val chapters = providerManager.getMergedChapters(mangaId, details, languages)
             cacheDao.deleteChaptersForManga(mangaId)
             cacheDao.upsertChapters(chapters.mapIndexed { index, chapter ->
                 chapter.toCacheEntity(orderIndex = index, now = now)
@@ -82,7 +83,7 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getPages(chapterId: String, dataSaver: Boolean): List<Page> =
-        provider.getPages(chapterId, dataSaver)
+        providerManager.providerForResource(chapterId).getPages(chapterId, dataSaver)
 
     override suspend fun clearCache() {
         cacheDao.clearChapters()

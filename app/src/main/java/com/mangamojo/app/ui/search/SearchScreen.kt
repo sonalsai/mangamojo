@@ -45,6 +45,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mangamojo.app.core.SOURCE_MANGAKAKALOT
+import com.mangamojo.app.core.SOURCE_MANGADEX
 import com.mangamojo.app.domain.model.Manga
 import com.mangamojo.app.domain.model.SearchSort
 import com.mangamojo.app.ui.components.EmptyState
@@ -251,9 +253,16 @@ private val SearchSort.label: String
     }
 
 private val Manga.metadata: String
-    get() = listOf(status.label, contentRating.prettyLabel())
+    get() = listOf(sourceLabel, status.label, contentRating.prettyLabel())
         .filter { it.isNotBlank() }
         .joinToString(" - ")
+
+private val Manga.sourceLabel: String
+    get() = when (sourceId) {
+        SOURCE_MANGADEX -> "MangaDex"
+        SOURCE_MANGAKAKALOT -> "MangaKakalot"
+        else -> sourceId.replaceFirstChar { it.uppercase() }
+    }
 
 private fun String.prettyLabel(): String =
     replaceFirstChar { it.uppercase() }

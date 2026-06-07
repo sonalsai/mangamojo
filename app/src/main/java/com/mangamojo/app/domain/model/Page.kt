@@ -4,4 +4,5 @@ package com.mangamojo.app.domain.model
 data class Page(
     val index: Int,
     val imageUrl: String,
+    val headers: Map<String, String> = emptyMap(),
 )

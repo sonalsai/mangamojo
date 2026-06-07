@@ -16,6 +16,9 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) load(FileInputStream(keystorePropertiesFile))
 }
+val mangaKakalotBaseUrl = providers.gradleProperty("mangakakalotBaseUrl")
+    .orElse("https://www.mangakakalot.gg")
+    .get()
 
 android {
     namespace = "com.mangamojo.app"
@@ -33,6 +36,7 @@ android {
         versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MANGAKAKALOT_BASE_URL", "\"${mangaKakalotBaseUrl.trimEnd('/')}\"")
     }
 
     signingConfigs {
@@ -115,6 +119,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.jsoup)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

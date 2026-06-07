@@ -23,4 +23,5 @@ data class SearchQuery(
     val contentRatings: List<String> = MangaDex.DEFAULT_CONTENT_RATINGS,
     val includedTagIds: List<String> = emptyList(),
     val updatedAtSince: String? = null,
+    val sourceId: String? = null,
 )

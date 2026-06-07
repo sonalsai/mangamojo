@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
  *  rest of the app never hard-codes the string and future providers can add
  *  their own. */
 const val SOURCE_MANGADEX = "mangadex"
+const val SOURCE_MANGAKAKALOT = "mangakakalot"
 
 /** MangaDex public API. No key required for read access. */
 object MangaDex {

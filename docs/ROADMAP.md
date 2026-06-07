@@ -16,22 +16,31 @@ Patch releases that refine the MVP without changing core behavior:
 
 The architecture was built for this; only the integration points below need implementation.
 
-1. **Add a second provider.** Implement `MangaProvider` for a new source in `providers/`.
-   It returns the same domain models - no UI or domain changes required.
-2. **Multibind providers.** Change `ProviderModule` from `@Binds` to `@Binds @IntoSet`
-   so Hilt provides a `Set<MangaProvider>`.
-3. **Multi-source repository.** Update `MangaRepositoryImpl` to iterate the provider set
-   instead of a single provider.
-4. **Source priority ordering.** Add a settings-driven ordering so results and lookups
-   prefer the user's chosen sources.
-5. **Merge & deduplicate search.** Fan out `search` across providers concurrently, then
-   dedupe by normalized title/year. `sourceId` on every model disambiguates duplicates.
-6. **Fallback on failure.** When one provider's chapter/page fetch fails, fall through to
-   the next provider by priority.
-7. **Schema evolution.** Every entity already stores `sourceId`. When ids can collide
+1. **Add a second provider.** Started with `MangaKakalotProvider`, a configurable
+   HTML provider under `providers/mangakakalot/`.
+2. **Multibind providers.** Done: `ProviderModule` now contributes providers with
+   `@Binds @IntoSet` and Hilt provides a `Set<MangaProvider>`.
+3. **Multi-source repository.** Started: `MangaRepositoryImpl` now delegates to
+   `ProviderManager` for merged search, source-routed lookups, and supplemental
+   chapter feeds.
+4. **Source priority ordering.** Started with static priority (`MangaDex` first).
+   MangaDex is treated as the canonical entry when duplicates exist; supplement
+   providers fill missing data.
+5. **Merge & deduplicate search.** Started: `ProviderManager` fans out search across
+   providers concurrently and dedupes by normalized title/year. `sourceId` on every
+   model disambiguates duplicates.
+6. **Chapter supplementation.** Started: exact title matches from MangaKakalot can
+   add chapters under the MangaDex manga entry, with dedupe by chapter number/title.
+7. **Fallback on failure.** Search already tolerates a failed provider when another
+   succeeds. Chapter supplementation also survives a failed supplement provider.
+   Next: when a specific provider chapter/page fetch fails, fall through to the
+   next matching provider by priority.
+8. **Reader image headers.** Done: `Page` can carry request headers and the reader
+   passes them to Coil.
+9. **Schema evolution.** Every entity already stores `sourceId`. When ids can collide
    across sources, migrate cache tables to a composite `(sourceId, mangaId)` key and add a
    real Room migration (replacing the destructive fallback).
-8. **Paged reader modes.** Implement single/double-page horizontal pagers; `ReadingDirection`
+10. **Paged reader modes.** Implement single/double-page horizontal pagers; `ReadingDirection`
    (LTR/RTL) and `dataSaver` are already plumbed through Settings.
 
 ### Explicitly out of scope (per product direction)

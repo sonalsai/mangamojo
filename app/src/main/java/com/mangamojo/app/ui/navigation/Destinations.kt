@@ -36,8 +36,9 @@ object Routes {
             "&$ARG_CATEGORY_TAG_IDS={$ARG_CATEGORY_TAG_IDS}" +
             "&$ARG_CATEGORY_RATINGS={$ARG_CATEGORY_RATINGS}"
 
-    fun details(mangaId: String): String = "details/$mangaId"
-    fun reader(mangaId: String, chapterId: String): String = "reader/$mangaId/$chapterId"
+    fun details(mangaId: String): String = "details/${Uri.encode(mangaId)}"
+    fun reader(mangaId: String, chapterId: String): String =
+        "reader/${Uri.encode(mangaId)}/${Uri.encode(chapterId)}"
     fun category(
         id: String,
         name: String,

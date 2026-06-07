@@ -40,7 +40,7 @@ so promoting layers to separate Gradle modules later is mechanical.
 | `com.mangamojo.app` | `MainActivity` (Compose host), `MainViewModel` (theme), `MangaMojoApp` (Hilt + WorkManager config + Coil image loader) |
 | `core` | `Constants` (cache policy), `AppError` + `toAppError()` (error normalization), `UiState` (generic sealed UI state) |
 | `domain.model` | Source-agnostic models: `Manga`, `MangaDetails`, `Chapter`, `Page`, `SearchResult`, `SearchQuery`, `ReadingProgress`, `Favorite`, `HistoryEntry`, `AppSettings`, enums |
-| `domain.provider` | `MangaProvider` — the source seam |
+| `domain.provider` | `MangaProvider`, `ProviderManager`, and provider-qualified id helpers |
 | `domain.repository` | `MangaRepository`, `LibraryRepository`, `SettingsRepository` (interfaces) |
 | `domain.usecase` | Thin use cases grouped by feature (Manga / Library / Reader / Settings) |
 | `data.remote` | API client (Retrofit), `dto/` (serialization models), `mapper/` (DTO→domain), `RetryInterceptor` |
@@ -58,12 +58,12 @@ so promoting layers to separate Gradle modules later is mechanical.
 
 ```
 Composable ──collectAsStateWithLifecycle──► ViewModel.StateFlow
-ViewModel ──suspend──► UseCase ──► Repository ──► { MangaProvider (network)  ⇄  Room (cache) }
+ViewModel ──suspend──► UseCase ──► Repository ──► { ProviderManager ──► MangaProvider(s)  ⇄  Room (cache) }
 ```
 
 1. A screen observes its `ViewModel`'s `StateFlow` and renders `Loading / Success / Error`.
 2. The ViewModel invokes a **use case**, which delegates to a **repository interface**.
-3. `MangaRepositoryImpl` decides between the cache and the network:
+3. `MangaRepositoryImpl` decides between the cache and the provider layer:
    - **Details / chapters** are *read-through cached*. If the cached row is fresh
      (within TTL) and no refresh is forced, it's returned immediately. Otherwise the
      provider is hit and the result is written back. **If the network fails, stale cache
@@ -96,10 +96,14 @@ interface MangaProvider {
 
 - Provider implementations own all source-specific details (query conventions, includes, pagination patterns, page-delivery flow, data normalization).
 - They return **only normalized domain models** — DTOs never escape the `data.remote` layer.
-- `ProviderModule` binds the provider(s) today. **Phase 2** switches this to a Hilt
-  multibinding (`@Binds @IntoSet`) and lets the repository iterate a `Set<MangaProvider>`
-  to merge results, fall back across sources, and apply priority ordering. Every domain
-  model and Room row already carries a `sourceId` for exactly this reason.
+- `ProviderModule` contributes providers through Hilt multibinding (`@Binds @IntoSet`).
+- `ProviderManager` owns provider priority, merged search, source-aware routing, and
+  provider failure isolation for search and supplemental chapter feeds.
+- MangaDex is the canonical provider when the same title exists in multiple places.
+  Supplement providers can add missing chapters under the canonical manga entry after
+  exact title matching and chapter deduplication.
+- URL-backed providers use provider-qualified ids so route/cache keys stay safe while
+  MangaDex UUIDs remain unchanged for existing user data.
 
 ---
 
@@ -112,7 +116,7 @@ All graphs are installed in `SingletonComponent`:
 | `NetworkModule` | `Json`, `OkHttpClient` (User-Agent, timeouts, `RetryInterceptor`, debug logging), `Retrofit` (kotlinx-serialization converter), API clients |
 | `DatabaseModule` | `MangaMojoDatabase`, each DAO, and the settings `DataStore<Preferences>` |
 | `RepositoryModule` | `@Binds` the three repository interfaces to their impls |
-| `ProviderModule` | `@Binds` `MangaProvider` → provider implementation(s) |
+| `ProviderModule` | `@Binds @IntoSet` provider contributions (`MangaDexProvider`, `MangaKakalotProvider`) |
 
 `MangaMojoApp` is `@HiltAndroidApp` and also:
 - implements `Configuration.Provider` to supply a `HiltWorkerFactory` so workers can be
@@ -125,8 +129,11 @@ All graphs are installed in `SingletonComponent`:
 ## Networking
 
 - `OkHttpClient`: 15 s connect / 20 s read / 15 s write timeouts, a polite `User-Agent`,
-  `Accept: application/json`, and a `RetryInterceptor` that retries transient `429`/`5xx`
-  once with a fixed backoff.
+  default `Accept: application/json` when a request does not provide one, and a
+  `RetryInterceptor` that retries transient `429`/`5xx` once with a fixed backoff.
+- `MangaKakalotProvider` uses the same OkHttp client plus Jsoup for HTML parsing. Its
+  base URL is configurable with `-PmangakakalotBaseUrl=...` because MangaKakalot-style
+  domains have changed before.
 - `Json` is configured with `ignoreUnknownKeys`, `coerceInputValues`, `isLenient`,
   `explicitNulls = false`.
 - A `LenientStringMapSerializer` coerces provider-specific quirks (e.g., occasional
@@ -169,6 +176,7 @@ Both are `@HiltWorker` `CoroutineWorker`s and are best-effort (`Result.retry()` 
 ## Reader internals
 
 - Vertical `LazyColumn` of full-width page images (Coil `AsyncImage`, `FillWidth`).
+  Providers can attach per-page headers, which the reader forwards to Coil image requests.
 - A fresh `LazyListState` per chapter, positioned at the **resume page** read from
   `reading_progress`.
 - A `snapshotFlow` on the first visible index drives two effects: immediate **preloading**

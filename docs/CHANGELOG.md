@@ -22,6 +22,27 @@ MangaMojo follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Started Phase 2 multi-provider support with Hilt `@IntoSet` provider bindings and
+  a `ProviderManager` that merges search results into one catalog while routing
+  details, chapters, and reader pages by source-aware ids.
+- Added a configurable MangaKakalot HTML provider as the first non-API source.
+  Override its base URL with `-PmangakakalotBaseUrl=https://example.tld` when the
+  source domain changes.
+- MangaDex details now fetch a merged chapter feed: MangaDex remains the canonical
+  entry, and exact title matches from MangaKakalot can supplement missing chapters
+  without duplicating existing MangaDex chapters.
+
+### Changed
+
+- Reader pages now support per-page image request headers, used by HTML providers for
+  source-specific `Referer`/`User-Agent` handling.
+- Navigation now URL-encodes manga/chapter route args so provider-qualified ids are safe
+  to pass through Compose Navigation.
+
 ## [1.1.0] - 2026-06-06
 
 Current latest release tag. Patch release with UI enhancements, customization options, and new content browsing features.

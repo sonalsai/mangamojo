@@ -44,7 +44,11 @@ object NetworkModule {
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("User-Agent", MangaDex.USER_AGENT)
-                    .header("Accept", "application/json")
+                    .apply {
+                        if (chain.request().header("Accept") == null) {
+                            header("Accept", "application/json")
+                        }
+                    }
                     .build()
                 chain.proceed(request)
             }

@@ -1,5 +1,6 @@
 package com.mangamojo.app.reader
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
+import coil3.network.NetworkHeaders
+import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.mangamojo.app.domain.model.Page
 import com.mangamojo.app.ui.components.EmptyState
@@ -143,7 +146,7 @@ fun ReaderScreen(
                 // Warm the cache for the next few pages.
                 for (i in index + 1..index + 3) {
                     state.pages.getOrNull(i)?.let { page ->
-                        imageLoader.enqueue(ImageRequest.Builder(context).data(page.imageUrl).build())
+                        imageLoader.enqueue(page.imageRequest(context))
                     }
                 }
             }
@@ -168,15 +171,24 @@ private fun PageList(pages: List<Page>, listState: LazyListState) {
     ) {
         items(pages, key = { it.index }) { page ->
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(page.imageUrl)
-                    .build(),
+                model = page.imageRequest(LocalContext.current),
                 contentDescription = "Page ${page.index + 1}",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
     }
+}
+
+private fun Page.imageRequest(context: Context): ImageRequest {
+    val builder = ImageRequest.Builder(context).data(imageUrl)
+    if (headers.isNotEmpty()) {
+        val networkHeaders = NetworkHeaders.Builder().apply {
+            headers.forEach { (name, value) -> set(name, value) }
+        }.build()
+        builder.httpHeaders(networkHeaders)
+    }
+    return builder.build()
 }
 
 @Composable
