@@ -3,6 +3,7 @@ package com.mangamojo.app.di
 import com.mangamojo.app.domain.provider.MangaProvider
 import com.mangamojo.app.providers.mangadex.MangaDexProvider
 import com.mangamojo.app.providers.mangakakalot.MangaKakalotProvider
+import com.mangamojo.app.providers.mangareader.MangaReaderProvider
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -28,4 +29,9 @@ abstract class ProviderModule {
     @IntoSet
     @Singleton
     abstract fun bindMangaKakalotProvider(impl: MangaKakalotProvider): MangaProvider
+
+    @Binds
+    @IntoSet
+    @Singleton
+    abstract fun bindMangaReaderProvider(impl: MangaReaderProvider): MangaProvider
 }

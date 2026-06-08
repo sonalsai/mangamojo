@@ -11,8 +11,8 @@ bookmarks, reading progress, cached metadata) lives on-device.
 
 Phase 2 development has started on the main codebase: search can now fan out across a
 provider set and dedupe results into one catalog. MangaDex remains the canonical API
-source, while MangaKakalot is available as a configurable supplement for titles whose
-MangaDex chapter feed is missing or incomplete.
+source, while MangaKakalot and MangaReader are configurable supplements for titles
+whose MangaDex chapter feed is missing or incomplete.
 
 ---
 

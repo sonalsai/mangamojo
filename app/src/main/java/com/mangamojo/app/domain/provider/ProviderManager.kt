@@ -1,6 +1,8 @@
 package com.mangamojo.app.domain.provider
 
 import com.mangamojo.app.core.SOURCE_MANGADEX
+import com.mangamojo.app.core.SOURCE_MANGAKAKALOT
+import com.mangamojo.app.core.SOURCE_MANGAREADER
 import com.mangamojo.app.domain.model.Chapter
 import com.mangamojo.app.domain.model.Manga
 import com.mangamojo.app.domain.model.MangaCategory
@@ -22,6 +24,14 @@ class ProviderManager @Inject constructor(
     private val providersById: Map<String, MangaProvider> = orderedProviders.associateBy { it.id }
 
     val availableProviders: List<MangaProvider> get() = orderedProviders
+
+    suspend fun getHealthyProviders(): List<MangaProvider> = coroutineScope {
+        orderedProviders
+            .map { provider -> async { provider to runCatching { provider.isAvailable() }.getOrDefault(false) } }
+            .awaitAll()
+            .filter { (_, healthy) -> healthy }
+            .map { (provider, _) -> provider }
+    }
 
     fun providerForResource(resourceId: String): MangaProvider {
         val sourceId = ProviderItemId.sourceId(resourceId)
@@ -179,6 +189,8 @@ class ProviderManager @Inject constructor(
 
     private fun providerPriority(providerId: String): Int = when (providerId) {
         SOURCE_MANGADEX -> 0
+        SOURCE_MANGAREADER -> 10
+        SOURCE_MANGAKAKALOT -> 20
         else -> 10
     }
 

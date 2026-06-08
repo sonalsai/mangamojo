@@ -32,9 +32,12 @@ MangaMojo follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH
 - Added a configurable MangaKakalot HTML provider as the first non-API source.
   Override its base URL with `-PmangakakalotBaseUrl=https://example.tld` when the
   source domain changes.
+- Added a configurable MangaReader provider backed by Ktor + Jsoup. It supports
+  search, details, chapter lists, reader pages, page image headers, retry/backoff,
+  five-minute in-memory caching, and mocked HTML unit tests.
 - MangaDex details now fetch a merged chapter feed: MangaDex remains the canonical
-  entry, and exact title matches from MangaKakalot can supplement missing chapters
-  without duplicating existing MangaDex chapters.
+  entry, and exact title matches from supplemental providers can add missing
+  chapters without duplicating existing MangaDex chapters.
 
 ### Changed
 
@@ -42,6 +45,8 @@ MangaMojo follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH
   source-specific `Referer`/`User-Agent` handling.
 - Navigation now URL-encodes manga/chapter route args so provider-qualified ids are safe
   to pass through Compose Navigation.
+- `MangaProvider` now exposes `baseUrl` and `isAvailable()`. `ProviderManager` can
+  return currently healthy providers.
 
 ## [1.1.0] - 2026-06-06
 

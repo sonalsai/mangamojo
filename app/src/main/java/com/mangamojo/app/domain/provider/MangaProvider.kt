@@ -14,8 +14,9 @@ import com.mangamojo.app.domain.model.SearchResult
  * without touching UI or domain code.
  *
  * This is the evolved form of the Phase 1 sketch: it adds an [id]/[name] for
- * source attribution, paginated/typed search, and richer return types so the
- * UI never sees source-specific DTOs.
+ * source attribution, a configurable base URL, provider health checks,
+ * paginated/typed search, and richer return types so the UI never sees
+ * source-specific DTOs.
  *
  * All methods are suspend and may throw; the repository/use-case layer is
  * responsible for catching and normalizing failures into
@@ -28,6 +29,9 @@ interface MangaProvider {
     /** Human-readable name for UI attribution. */
     val name: String
 
+    /** Provider root URL, used for attribution and health checks. */
+    val baseUrl: String
+
     suspend fun search(query: SearchQuery): SearchResult
 
     suspend fun getCategories(): List<MangaCategory>
@@ -37,4 +41,6 @@ interface MangaProvider {
     suspend fun getChapters(mangaId: String, languages: List<String>): List<Chapter>
 
     suspend fun getPages(chapterId: String, dataSaver: Boolean): List<Page>
+
+    suspend fun isAvailable(): Boolean = true
 }

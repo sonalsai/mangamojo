@@ -16,8 +16,8 @@ Patch releases that refine the MVP without changing core behavior:
 
 The architecture was built for this; only the integration points below need implementation.
 
-1. **Add a second provider.** Started with `MangaKakalotProvider`, a configurable
-   HTML provider under `providers/mangakakalot/`.
+1. **Add additional providers.** Started with configurable scraper providers:
+   `MangaKakalotProvider` and `MangaReaderProvider`.
 2. **Multibind providers.** Done: `ProviderModule` now contributes providers with
    `@Binds @IntoSet` and Hilt provides a `Set<MangaProvider>`.
 3. **Multi-source repository.** Started: `MangaRepositoryImpl` now delegates to
@@ -29,18 +29,21 @@ The architecture was built for this; only the integration points below need impl
 5. **Merge & deduplicate search.** Started: `ProviderManager` fans out search across
    providers concurrently and dedupes by normalized title/year. `sourceId` on every
    model disambiguates duplicates.
-6. **Chapter supplementation.** Started: exact title matches from MangaKakalot can
-   add chapters under the MangaDex manga entry, with dedupe by chapter number/title.
+6. **Chapter supplementation.** Started: exact title matches from supplemental
+   providers can add chapters under the MangaDex manga entry, with dedupe by
+   chapter number/title.
 7. **Fallback on failure.** Search already tolerates a failed provider when another
    succeeds. Chapter supplementation also survives a failed supplement provider.
    Next: when a specific provider chapter/page fetch fails, fall through to the
    next matching provider by priority.
-8. **Reader image headers.** Done: `Page` can carry request headers and the reader
+8. **Provider health checks.** Started: providers expose `isAvailable()` and
+   `ProviderManager.getHealthyProviders()` returns reachable sources.
+9. **Reader image headers.** Done: `Page` can carry request headers and the reader
    passes them to Coil.
-9. **Schema evolution.** Every entity already stores `sourceId`. When ids can collide
+10. **Schema evolution.** Every entity already stores `sourceId`. When ids can collide
    across sources, migrate cache tables to a composite `(sourceId, mangaId)` key and add a
    real Room migration (replacing the destructive fallback).
-10. **Paged reader modes.** Implement single/double-page horizontal pagers; `ReadingDirection`
+11. **Paged reader modes.** Implement single/double-page horizontal pagers; `ReadingDirection`
    (LTR/RTL) and `dataSaver` are already plumbed through Settings.
 
 ### Explicitly out of scope (per product direction)

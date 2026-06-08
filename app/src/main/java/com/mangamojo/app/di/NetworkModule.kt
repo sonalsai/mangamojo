@@ -8,6 +8,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -75,4 +77,11 @@ object NetworkModule {
     @Singleton
     fun provideMangaDexApi(retrofit: Retrofit): MangaDexApi =
         retrofit.create(MangaDexApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideKtorHttpClient(): HttpClient =
+        HttpClient(OkHttp) {
+            expectSuccess = false
+        }
 }

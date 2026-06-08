@@ -32,8 +32,7 @@ class MangaKakalotProvider @Inject constructor(
 
     override val id: String = SOURCE_MANGAKAKALOT
     override val name: String = "MangaKakalot"
-
-    private val baseUrl: String = BuildConfig.MANGAKAKALOT_BASE_URL.trimEnd('/')
+    override val baseUrl: String = BuildConfig.MANGAKAKALOT_BASE_URL.trimEnd('/')
 
     override suspend fun search(query: SearchQuery): SearchResult {
         val title = query.title?.trim().orEmpty()
@@ -144,6 +143,9 @@ class MangaKakalotProvider @Inject constructor(
             .distinct()
             .mapIndexed { index, imageUrl -> Page(index = index, imageUrl = imageUrl, headers = headers) }
     }
+
+    override suspend fun isAvailable(): Boolean =
+        runCatching { fetchDocument(baseUrl) }.isSuccess
 
     private suspend fun fetchDocument(url: String): Document = withContext(Dispatchers.IO) {
         val absoluteUrl = absoluteUrl(url)

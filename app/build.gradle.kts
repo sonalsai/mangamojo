@@ -19,6 +19,9 @@ val keystoreProperties = Properties().apply {
 val mangaKakalotBaseUrl = providers.gradleProperty("mangakakalotBaseUrl")
     .orElse("https://www.mangakakalot.gg")
     .get()
+val mangaReaderBaseUrl = providers.gradleProperty("mangaReaderBaseUrl")
+    .orElse("https://mangareader.to")
+    .get()
 
 android {
     namespace = "com.mangamojo.app"
@@ -37,6 +40,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "MANGAKAKALOT_BASE_URL", "\"${mangaKakalotBaseUrl.trimEnd('/')}\"")
+        buildConfigField("String", "MANGAREADER_BASE_URL", "\"${mangaReaderBaseUrl.trimEnd('/')}\"")
     }
 
     signingConfigs {
@@ -120,6 +124,8 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.jsoup)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
@@ -134,6 +140,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -32,6 +32,7 @@ class MangaDexProvider @Inject constructor(
 
     override val id: String = SOURCE_MANGADEX
     override val name: String = "MangaDex"
+    override val baseUrl: String = MangaDex.API_BASE.trimEnd('/')
 
     override suspend fun search(query: SearchQuery): SearchResult {
         // `relevance` is only valid alongside a title search; fall back to
@@ -98,6 +99,22 @@ class MangaDexProvider @Inject constructor(
     override suspend fun getPages(chapterId: String, dataSaver: Boolean): List<Page> {
         return api.getAtHomeServer(chapterId).toPages(dataSaver)
     }
+
+    override suspend fun isAvailable(): Boolean =
+        runCatching {
+            api.searchManga(
+                title = null,
+                limit = 1,
+                offset = 0,
+                contentRating = MangaDex.DEFAULT_CONTENT_RATINGS,
+                includes = emptyList(),
+                hasAvailableChapters = "true",
+                includedTags = null,
+                includedTagsMode = null,
+                updatedAtSince = null,
+                order = mapOf("order[followedCount]" to "desc"),
+            )
+        }.isSuccess
 
     private fun String.categoryOrder(): Int = when (this) {
         "genre" -> 0

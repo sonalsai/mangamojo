@@ -87,10 +87,12 @@ runs in `viewModelScope`; reactive reads use `stateIn(...)` with
 interface MangaProvider {
     val id: String          // e.g. "mangadex", "another_source"
     val name: String        // e.g. "MangaDex", "Another Source"
+    val baseUrl: String
     suspend fun search(query: SearchQuery): SearchResult
     suspend fun getMangaDetails(mangaId: String): MangaDetails
     suspend fun getChapters(mangaId: String, languages: List<String>): List<Chapter>
     suspend fun getPages(chapterId: String, dataSaver: Boolean): List<Page>
+    suspend fun isAvailable(): Boolean
 }
 ```
 
@@ -102,6 +104,8 @@ interface MangaProvider {
 - MangaDex is the canonical provider when the same title exists in multiple places.
   Supplement providers can add missing chapters under the canonical manga entry after
   exact title matching and chapter deduplication.
+- Providers expose health checks; `ProviderManager.getHealthyProviders()` returns
+  sources that are currently reachable.
 - URL-backed providers use provider-qualified ids so route/cache keys stay safe while
   MangaDex UUIDs remain unchanged for existing user data.
 
@@ -113,10 +117,10 @@ All graphs are installed in `SingletonComponent`:
 
 | Module | Provides |
 | --- | --- |
-| `NetworkModule` | `Json`, `OkHttpClient` (User-Agent, timeouts, `RetryInterceptor`, debug logging), `Retrofit` (kotlinx-serialization converter), API clients |
+| `NetworkModule` | `Json`, `OkHttpClient` (User-Agent, timeouts, `RetryInterceptor`, debug logging), Retrofit (MangaDex), Ktor `HttpClient` (scraper providers), API clients |
 | `DatabaseModule` | `MangaMojoDatabase`, each DAO, and the settings `DataStore<Preferences>` |
 | `RepositoryModule` | `@Binds` the three repository interfaces to their impls |
-| `ProviderModule` | `@Binds @IntoSet` provider contributions (`MangaDexProvider`, `MangaKakalotProvider`) |
+| `ProviderModule` | `@Binds @IntoSet` provider contributions (`MangaDexProvider`, `MangaKakalotProvider`, `MangaReaderProvider`) |
 
 `MangaMojoApp` is `@HiltAndroidApp` and also:
 - implements `Configuration.Provider` to supply a `HiltWorkerFactory` so workers can be
@@ -134,6 +138,9 @@ All graphs are installed in `SingletonComponent`:
 - `MangaKakalotProvider` uses the same OkHttp client plus Jsoup for HTML parsing. Its
   base URL is configurable with `-PmangakakalotBaseUrl=...` because MangaKakalot-style
   domains have changed before.
+- `MangaReaderProvider` uses Ktor client plus Jsoup for HTML parsing. Its base URL is
+  configurable with `-PmangaReaderBaseUrl=...`; network calls use three attempts with
+  exponential backoff and a five-minute in-memory cache for search, details, and chapters.
 - `Json` is configured with `ignoreUnknownKeys`, `coerceInputValues`, `isLenient`,
   `explicitNulls = false`.
 - A `LenientStringMapSerializer` coerces provider-specific quirks (e.g., occasional

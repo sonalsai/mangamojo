@@ -47,6 +47,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mangamojo.app.core.SOURCE_MANGAKAKALOT
 import com.mangamojo.app.core.SOURCE_MANGADEX
+import com.mangamojo.app.core.SOURCE_MANGAREADER
 import com.mangamojo.app.domain.model.Manga
 import com.mangamojo.app.domain.model.SearchSort
 import com.mangamojo.app.ui.components.EmptyState
@@ -260,6 +261,7 @@ private val Manga.metadata: String
 private val Manga.sourceLabel: String
     get() = when (sourceId) {
         SOURCE_MANGADEX -> "MangaDex"
+        SOURCE_MANGAREADER -> "MangaReader"
         SOURCE_MANGAKAKALOT -> "MangaKakalot"
         else -> sourceId.replaceFirstChar { it.uppercase() }
     }
